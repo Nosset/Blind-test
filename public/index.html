@@ -504,6 +504,20 @@ input[type=text] + input[type=text] { margin-top: 8px; }
   <h2 style="margin-bottom: 4px;">Nouvelle partie</h2>
   <p class="muted" style="margin-bottom: 20px;">Configure et invite tes amis</p>
 
+  <!-- Game mode selector -->
+  <div class="gamemode-grid">
+    <div class="gamemode-card active" id="gm-online" onclick="selectGameMode('online')">
+      <div class="gm-icon">📱</div>
+      <div class="gm-title">En ligne</div>
+      <div class="gm-desc">Chacun entend le son sur son téléphone. Parfait à distance.</div>
+    </div>
+    <div class="gamemode-card" id="gm-apero" onclick="selectGameMode('apero')">
+      <div class="gm-icon">🍻</div>
+      <div class="gm-title">Apéro</div>
+      <div class="gm-desc">Le son sort d'une seule enceinte. Tout le monde est ensemble.</div>
+    </div>
+  </div>
+
   <div class="card">
     <span class="label">Ton pseudo</span>
     <input type="text" id="host-name" placeholder="Ex: Julie" maxlength="20">
@@ -646,6 +660,15 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 
 <!-- ── JEU ───────────────────────────────────────────────────────────── -->
 <div id="screen-game" class="screen">
+  <div class="apero-banner" id="apero-banner">🍻 Mode Apéro — Le son joue sur l'enceinte de l'hôte</div>
+  <div class="waiting-sound" id="waiting-sound">
+    <div class="sound-wave">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div style="font-weight:600; font-size:15px; margin-bottom:4px;">Le son joue sur l'enceinte 🔊</div>
+    <div class="muted" style="font-size:13px;">Écoute et réponds quand tu penses avoir trouvé !</div>
+  </div>
+
   <div class="score-bar">
     <div class="score-col">
       <div class="score-val" id="my-score">0</div>
@@ -796,7 +819,8 @@ let myId = null;
 let myRoom = null;
 let isHost = false;
 let myScore = 0;
-let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10 };
+let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10, gameMode: 'online' };
+let isApero = false;
 let currentQuestion = null;
 let answered = false;
 let progressTimer = null;
@@ -873,6 +897,12 @@ function addArtist() {
   renderArtistChips();
 }
 
+function selectGameMode(mode) {
+  settings.gameMode = mode;
+  document.getElementById('gm-online').classList.toggle('active', mode === 'online');
+  document.getElementById('gm-apero').classList.toggle('active', mode === 'apero');
+}
+
 function renderArtistChips() {
   const c = document.getElementById('artist-chips');
   c.innerHTML = settings.artists.map((a, i) =>
@@ -937,7 +967,8 @@ socket.on('joined-room', ({ code }) => {
   showScreen('screen-lobby');
 });
 
-socket.on('room-state', ({ players, host }) => {
+socket.on('room-state', ({ players, host, settings: roomSettings }) => {
+  if (roomSettings?.gameMode) isApero = roomSettings.gameMode === 'apero';
   myId = socket.id;
   document.getElementById('lobby-count').textContent = `${players.length} joueur${players.length > 1 ? 's' : ''}`;
   document.getElementById('lobby-players').innerHTML = players.map(p => {
@@ -1029,6 +1060,29 @@ socket.on('new-question', ({ qNumber, qTotal, preview, options, players }) => {
     document.getElementById('play-btn').innerHTML = ICONS.pause;
     startProgress();
   }).catch(() => {});
+
+  // Apero mode: only host plays audio, others just see the answers
+  const aperoBanner = document.getElementById('apero-banner');
+  const waitingSound = document.getElementById('waiting-sound');
+  const audioCard = document.querySelector('.audio-card');
+
+  if (isApero) {
+    aperoBanner.classList.add('visible');
+    if (!isHost) {
+      // Non-host: hide player, show waiting indicator
+      audioCard.style.display = 'none';
+      waitingSound.classList.add('visible');
+      // Don't play audio on non-host devices
+      stopAudio();
+    } else {
+      audioCard.style.display = 'block';
+      waitingSound.classList.remove('visible');
+    }
+  } else {
+    aperoBanner.classList.remove('visible');
+    audioCard.style.display = 'block';
+    waitingSound.classList.remove('visible');
+  }
 
   startCountdown(10);
   showScreen('screen-game');
