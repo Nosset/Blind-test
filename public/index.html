@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🎵 Blind Test</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+  :root {
+    --purple: #534AB7;
+    --purple-light: #7F77DD;
+    --purple-bg: #EEEDFE;
+    --purple-dark: #3C3489;
+    --green: #3B6D11;
+    --green-bg: #EAF3DE;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: rgba(0,0,0,0.12);
+    --bg: #f7f6f2;
+    --card: #ffffff;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: #f0eefc;
+      --text-muted: #a09ec0;
+      --border: rgba(255,255,255,0.12);
+      --bg: #1a1820;
+      --card: #26243a;
+      --purple-bg: #2e2b50;
+      --green-bg: #1a2d10;
+      --red-bg: #2d1010;
+      --amber-bg: #2d200a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; }
+
+  .screen { display: none; flex-direction: column; min-height: 100dvh; padding: 1.25rem; max-width: 480px; margin: 0 auto; }
+  .screen.active { display: flex; }
+
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .muted { color: var(--text-muted); font-size: 14px; }
+
+  .card { background: var(--card); border-radius: var(--radius); padding: 1.25rem; border: 0.5px solid var(--border); }
+  .card + .card { margin-top: 12px; }
+
+  /* Buttons */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 15px; border-radius: var(--radius-sm);
+    font-size: 16px; font-weight: 600; cursor: pointer; border: none;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-primary:hover { background: var(--purple-dark); }
+  .btn-secondary { background: var(--card); color: var(--text); border: 0.5px solid var(--border); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn + .btn { margin-top: 10px; }
+
+  /* Input */
+  input[type=text] {
+    width: 100%; padding: 14px; border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border); background: var(--bg);
+    color: var(--text); font-size: 16px; outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus { border-color: var(--purple-light); }
+  input[type=text] + input[type=text] { margin-top: 8px; }
+
+  label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer;
+    background: var(--card); border: 0.5px solid var(--border); color: var(--text);
+    transition: all 0.15s;
+  }
+  .pill.active { background: var(--purple); border-color: var(--purple); color: white; }
+
+  /* Player list */
+  .player-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .player-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-radius: var(--radius-sm);
+    background: var(--bg); border: 0.5px solid var(--border);
+    font-size: 15px;
+  }
+  .player-item .badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+    background: var(--purple-bg); color: var(--purple);
+  }
+  .player-item.answered { background: var(--green-bg); border-color: rgba(59,109,17,0.3); }
+  .player-item.correct { background: var(--green-bg); }
+  .player-item.wrong { background: var(--red-bg); }
+  .player-item .rank { font-size: 20px; min-width: 30px; }
+  .player-item .score { font-size: 18px; font-weight: 700; color: var(--purple); }
+
+  /* Code display */
+  .room-code {
+    font-size: 52px; font-weight: 800; letter-spacing: 0.12em;
+    color: var(--purple); text-align: center; margin: 16px 0;
+  }
+
+  /* Player card in game */
+  .audio-card { text-align: center; }
+  .cover-wrap {
+    width: 100px; height: 100px; border-radius: var(--radius-sm);
+    background: var(--bg); margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border: 0.5px solid var(--border);
+    font-size: 40px;
+  }
+  .cover-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .play-btn {
+    width: 60px; height: 60px; border-radius: 50%; background: var(--purple); border: none;
+    color: white; font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .play-btn:active { transform: scale(0.95); }
+  .play-btn:hover { background: var(--purple-dark); }
+  .progress-wrap { height: 5px; background: var(--bg); border-radius: 3px; cursor: pointer; position: relative; }
+  .progress-fill { height: 100%; background: var(--purple-light); border-radius: 3px; width: 0%; transition: width 0.3s linear; }
+  .time { font-size: 12px; color: var(--text-muted); text-align: right; margin-top: 4px; }
+
+  /* Answers */
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .ans-btn {
+    padding: 14px 10px; border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border); background: var(--card);
+    color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer;
+    text-align: center; line-height: 1.4; transition: all 0.15s;
+  }
+  .ans-btn:active:not(:disabled) { transform: scale(0.97); }
+  .ans-btn:not(:disabled):hover { border-color: var(--purple-light); background: var(--purple-bg); color: var(--purple); }
+  .ans-btn .ans-artist { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .ans-btn:not(:disabled):hover .ans-artist { color: var(--purple-light); }
+  .ans-btn.correct { background: var(--green-bg) !important; border-color: var(--green) !important; color: var(--green) !important; font-weight: 700; }
+  .ans-btn.wrong { background: var(--red-bg) !important; border-color: var(--red) !important; color: var(--red) !important; }
+  .ans-btn.correct .ans-artist, .ans-btn.wrong .ans-artist { color: inherit !important; }
+  .ans-btn:disabled { cursor: default; }
+
+  /* Score bar */
+  .score-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .score-big { font-size: 22px; font-weight: 700; color: var(--purple); }
+
+  /* Hints */
+  .hints { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+  .hint-pill { font-size: 12px; padding: 5px 11px; border-radius: 20px; background: var(--bg); border: 0.5px solid var(--border); color: var(--text-muted); }
+  .hint-pill.revealed { background: var(--purple-bg); color: var(--purple); border-color: transparent; font-weight: 600; }
+
+  /* Reveal overlay feeling */
+  .reveal-banner {
+    text-align: center; padding: 14px; border-radius: var(--radius-sm);
+    background: var(--purple-bg); margin-bottom: 12px;
+  }
+  .reveal-banner .track-title { font-size: 18px; font-weight: 700; color: var(--purple); }
+  .reveal-banner .track-artist { font-size: 14px; color: var(--purple-light); margin-top: 2px; }
+
+  /* Feedback pill */
+  .feedback {
+    text-align: center; font-size: 14px; font-weight: 600; padding: 10px;
+    border-radius: var(--radius-sm); margin-bottom: 10px;
+  }
+  .feedback.correct { background: var(--green-bg); color: var(--green); }
+  .feedback.wrong { background: var(--red-bg); color: var(--red); }
+  .feedback.waiting { background: var(--amber-bg); color: var(--amber); }
+
+  /* Results */
+  .podium { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  .podium-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border); background: var(--card);
+  }
+  .podium-item.gold { background: #FAEEDA; border-color: var(--amber); }
+  .podium-item.silver { background: #f2f2f2; border-color: #999; }
+  .podium-item.bronze { background: #fdf0e8; border-color: #cd7f32; }
+  @media (prefers-color-scheme: dark) {
+    .podium-item.gold { background: #2d200a; }
+    .podium-item.silver { background: #2a2a2a; }
+    .podium-item.bronze { background: #2d1a08; }
+  }
+  .podium-rank { font-size: 28px; min-width: 36px; }
+  .podium-name { font-size: 16px; font-weight: 600; flex: 1; }
+  .podium-score { font-size: 20px; font-weight: 700; color: var(--purple); }
+
+  /* Loader */
+  .loader { text-align: center; color: var(--text-muted); font-size: 14px; padding: 2rem 0; }
+
+  /* Error */
+  .error-msg { background: var(--red-bg); color: var(--red); padding: 12px; border-radius: var(--radius-sm); font-size: 14px; text-align: center; margin-top: 12px; }
+
+  /* Waiting indicator */
+  .waiting-dots::after { content: ''; animation: dots 1.5s infinite; }
+  @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''} }
+
+  /* Utils */
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+  .flex-1 { flex: 1; }
+  .text-center { text-align: center; }
+  .answered-count { font-size: 13px; color: var(--text-muted); }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+  .tag-host { background: var(--purple-bg); color: var(--purple); }
+  .tag-you { background: var(--green-bg); color: var(--green); }
+
+  /* Separator */
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── ACCUEIL ─────────────────────────────────────────────────────────────── -->
+<div id="screen-home" class="screen active">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+    <div class="text-center" style="margin-bottom: 2rem;">
+      <div style="font-size: 64px; margin-bottom: 12px;">🎵</div>
+      <h1>Blind Test</h1>
+      <p class="muted">Le blind test multijoueur gratuit</p>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('screen-create')">Créer une partie</button>
+    <button class="btn btn-secondary mt8" onclick="showScreen('screen-join')">Rejoindre une partie</button>
+  </div>
+</div>
+
+<!-- ── CRÉER ──────────────────────────────────────────────────────────────── -->
+<div id="screen-create" class="screen">
+  <div style="margin-bottom: 24px;">
+    <button class="btn btn-secondary" style="width:auto; padding:8px 14px;" onclick="showScreen('screen-home')">← Retour</button>
+  </div>
+  <h2>Créer une partie</h2>
+  <p class="muted" style="margin-bottom: 20px;">Configure et invite tes amis</p>
+
+  <div class="card">
+    <label>Ton pseudo</label>
+    <input type="text" id="host-name" placeholder="Ex: Julie" maxlength="20">
+  </div>
+
+  <div class="card mt12">
+    <label>Mode de jeu</label>
+    <div class="pills" id="mode-pills">
+      <div class="pill active" data-mode="random">🔀 Aléatoire</div>
+      <div class="pill" data-mode="theme">🏷️ Thème</div>
+      <div class="pill" data-mode="artist">🎤 Artiste</div>
+    </div>
+  </div>
+
+  <div class="card mt12" id="theme-card" style="display:none">
+    <label>Thème</label>
+    <div class="pills" id="theme-pills">
+      <div class="pill" data-theme="rap-fr">🇫🇷 Rap FR</div>
+      <div class="pill" data-theme="hip-hop">🇺🇸 Hip-hop US</div>
+      <div class="pill" data-theme="80s">📼 Années 80</div>
+      <div class="pill" data-theme="90s">💿 Années 90</div>
+      <div class="pill" data-theme="2000s">🌟 Années 2000</div>
+      <div class="pill" data-theme="rock">🎸 Rock</div>
+      <div class="pill" data-theme="electro">⚡ Electro</div>
+      <div class="pill" data-theme="rnb">🎷 R&B / Soul</div>
+      <div class="pill" data-theme="variete-fr">🥖 Variété FR</div>
+      <div class="pill" data-theme="pop">🎤 Pop</div>
+      <div class="pill" data-theme="reggae">🌴 Reggae</div>
+      <div class="pill" data-theme="metal">🤘 Metal</div>
+    </div>
+  </div>
+
+  <div class="card mt12" id="artist-card" style="display:none">
+    <label>Artistes</label>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="artist-input" placeholder="Ex: Booba, Beyoncé…" style="flex:1" maxlength="50">
+      <button class="btn btn-primary" style="width:auto; padding:10px 16px;" onclick="addArtist()">+</button>
+    </div>
+    <div id="artist-chips" class="pills mt8"></div>
+  </div>
+
+  <div class="card mt12">
+    <label>Nombre de questions</label>
+    <div class="pills" id="nb-pills">
+      <div class="pill" data-nb="5">5</div>
+      <div class="pill active" data-nb="10">10</div>
+      <div class="pill" data-nb="20">20</div>
+      <div class="pill" data-nb="999">∞ Infini</div>
+    </div>
+  </div>
+
+  <div id="create-error" class="error-msg" style="display:none"></div>
+  <button class="btn btn-primary mt16" id="create-btn" onclick="createRoom()">Créer la salle</button>
+</div>
+
+<!-- ── REJOINDRE ───────────────────────────────────────────────────────────── -->
+<div id="screen-join" class="screen">
+  <div style="margin-bottom: 24px;">
+    <button class="btn btn-secondary" style="width:auto; padding:8px 14px;" onclick="showScreen('screen-home')">← Retour</button>
+  </div>
+  <h2>Rejoindre une partie</h2>
+  <p class="muted" style="margin-bottom: 20px;">Entre le code de la salle</p>
+
+  <div class="card">
+    <label>Ton pseudo</label>
+    <input type="text" id="join-name" placeholder="Ex: Thomas" maxlength="20">
+    <label style="margin-top:14px;">Code de la salle</label>
+    <input type="text" id="join-code" placeholder="Ex: A3B7" maxlength="4" style="text-transform:uppercase; font-size:22px; font-weight:700; letter-spacing:0.1em;">
+  </div>
+
+  <div id="join-error" class="error-msg" style="display:none"></div>
+  <button class="btn btn-primary mt16" onclick="joinRoom()">Rejoindre</button>
+</div>
+
+<!-- ── LOBBY ───────────────────────────────────────────────────────────────── -->
+<div id="screen-lobby" class="screen">
+  <div class="text-center" style="margin-bottom: 20px;">
+    <p class="muted">Code de la salle</p>
+    <div class="room-code" id="lobby-code">----</div>
+    <button class="btn btn-secondary" style="width:auto; padding:8px 18px;" onclick="copyCode()">📋 Copier le lien</button>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <label style="margin:0;">Joueurs</label>
+      <span class="answered-count" id="lobby-count">0 joueur</span>
+    </div>
+    <ul class="player-list" id="lobby-players"></ul>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <div id="start-area" style="display:none">
+    <button class="btn btn-primary" id="lobby-start-btn" onclick="startGame()">🎮 Lancer la partie</button>
+    <p class="muted text-center mt8" style="font-size:12px;">Tu es l'hôte — les autres attendent</p>
+  </div>
+  <div id="wait-area">
+    <p class="muted text-center" style="padding: 16px 0;">En attente du lancement<span class="waiting-dots"></span></p>
+  </div>
+</div>
+
+<!-- ── CHARGEMENT PARTIE ────────────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <div style="font-size:56px; margin-bottom:16px;">🎵</div>
+    <h2 class="text-center">Chargement des morceaux</h2>
+    <p class="muted text-center" id="loading-status" style="margin-top:8px;">Connexion à Spotify<span class="waiting-dots"></span></p>
+  </div>
+</div>
+
+<!-- ── JEU ─────────────────────────────────────────────────────────────────── -->
+<div id="screen-game" class="screen">
+  <div class="score-bar">
+    <div>
+      <div class="muted" style="font-size:12px;">MON SCORE</div>
+      <div class="score-big" id="my-score">0</div>
+    </div>
+    <div class="text-center">
+      <div class="muted" style="font-size:12px;" id="q-label">Q 1/10</div>
+      <div class="answered-count" id="answered-count">0/0 répondu</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="muted" style="font-size:12px;">MEILLEUR</div>
+      <div class="score-big" id="best-score">0</div>
+    </div>
+  </div>
+
+  <div class="card audio-card">
+    <div class="cover-wrap" id="cover-wrap">🎵</div>
+    <button class="play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+    <div class="progress-wrap" onclick="seekAudio(event)">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="time" id="time-label">0:00 / 0:30</div>
+  </div>
+
+  <div class="hints" id="hints">
+    <div class="hint-pill" id="hint-year">Année : ?</div>
+    <div class="hint-pill" id="hint-album">Album : ?</div>
+  </div>
+
+  <div id="feedback" class="feedback" style="display:none"></div>
+
+  <div class="answers" id="answers"></div>
+</div>
+
+<!-- ── RÉVÉLATION ──────────────────────────────────────────────────────────── -->
+<div id="screen-reveal" class="screen">
+  <div class="reveal-banner card" id="reveal-banner">
+    <div style="font-size:48px; margin-bottom:8px;" id="reveal-cover-emoji">🎵</div>
+    <div class="track-title" id="reveal-title">Titre</div>
+    <div class="track-artist" id="reveal-artist">Artiste</div>
+    <div class="muted" style="margin-top:6px; font-size:12px;" id="reveal-meta"></div>
+  </div>
+
+  <div class="card mt12">
+    <label style="margin-bottom:10px;">Scores</label>
+    <ul class="player-list" id="reveal-players"></ul>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <div id="reveal-host-area" style="display:none; margin-top:16px;">
+    <button class="btn btn-primary" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+  <div id="reveal-wait-area" style="margin-top:16px;">
+    <p class="muted text-center">En attente de l'hôte<span class="waiting-dots"></span></p>
+  </div>
+</div>
+
+<!-- ── RÉSULTATS ───────────────────────────────────────────────────────────── -->
+<div id="screen-results" class="screen">
+  <div class="text-center" style="margin-bottom: 20px;">
+    <div style="font-size:56px;" id="result-emoji">🏆</div>
+    <h2 id="result-title" style="margin-top:8px;">Fin de partie !</h2>
+  </div>
+
+  <div class="podium" id="podium"></div>
+
+  <div class="flex-1"></div>
+  <button class="btn btn-primary" onclick="showScreen('screen-home'); location.reload();">Nouvelle partie</button>
+</div>
+
+<audio id="audio" crossorigin="anonymous"></audio>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const socket = io();
+let myId = null;
+let myRoom = null;
+let isHost = false;
+let myScore = 0;
+let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10 };
+let currentQuestion = null;
+let answered = false;
+let progressTimer = null;
+const audio = document.getElementById('audio');
+
+// ── Screen nav ───────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Create room UI ───────────────────────────────────────────────────────────
+document.querySelectorAll('#mode-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#mode-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    settings.mode = p.dataset.mode;
+    document.getElementById('theme-card').style.display = settings.mode === 'theme' ? 'block' : 'none';
+    document.getElementById('artist-card').style.display = settings.mode === 'artist' ? 'block' : 'none';
+  });
+});
+
+document.querySelectorAll('#theme-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#theme-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    settings.theme = p.dataset.theme;
+  });
+});
+
+document.querySelectorAll('#nb-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#nb-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    settings.nbQuestions = parseInt(p.dataset.nb);
+  });
+});
+
+document.getElementById('artist-input').addEventListener('keydown', e => { if (e.key === 'Enter') addArtist(); });
+
+function addArtist() {
+  const inp = document.getElementById('artist-input');
+  const name = inp.value.trim();
+  if (!name || settings.artists.includes(name)) return;
+  settings.artists.push(name);
+  inp.value = '';
+  renderArtistChips();
+}
+
+function renderArtistChips() {
+  const c = document.getElementById('artist-chips');
+  c.innerHTML = settings.artists.map((a, i) =>
+    `<div class="pill active" style="display:flex;align-items:center;gap:6px;">${a}<span style="cursor:pointer;opacity:0.7" onclick="removeArtist(${i})">×</span></div>`
+  ).join('');
+}
+
+function removeArtist(i) {
+  settings.artists.splice(i, 1);
+  renderArtistChips();
+}
+
+function showCreateError(msg) {
+  const el = document.getElementById('create-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function showJoinError(msg) {
+  const el = document.getElementById('join-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ── Create & Join ────────────────────────────────────────────────────────────
+function createRoom() {
+  const name = document.getElementById('host-name').value.trim();
+  if (!name) { showCreateError('Entre ton pseudo.'); return; }
+  if (settings.mode === 'theme' && !settings.theme) { showCreateError('Choisis un thème.'); return; }
+  if (settings.mode === 'artist' && !settings.artists.length) { showCreateError('Ajoute au moins un artiste.'); return; }
+  isHost = true;
+  socket.emit('create-room', { playerName: name, settings });
+}
+
+function joinRoom() {
+  const name = document.getElementById('join-name').value.trim();
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!name) { showJoinError('Entre ton pseudo.'); return; }
+  if (code.length !== 4) { showJoinError('Le code fait 4 lettres/chiffres.'); return; }
+  isHost = false;
+  socket.emit('join-room', { code, playerName: name });
+}
+
+// ── Lobby ────────────────────────────────────────────────────────────────────
+socket.on('room-created', ({ code }) => {
+  myRoom = code;
+  document.getElementById('lobby-code').textContent = code;
+  showScreen('screen-lobby');
+});
+
+socket.on('joined-room', ({ code }) => {
+  myRoom = code;
+  document.getElementById('lobby-code').textContent = code;
+  showScreen('screen-lobby');
+});
+
+socket.on('room-state', ({ players, host }) => {
+  myId = socket.id;
+  document.getElementById('lobby-count').textContent = `${players.length} joueur${players.length > 1 ? 's' : ''}`;
+  document.getElementById('lobby-players').innerHTML = players.map(p => {
+    const tags = [];
+    if (p.id === host) tags.push('<span class="tag tag-host">Hôte</span>');
+    if (p.id === myId) tags.push('<span class="tag tag-you">Toi</span>');
+    return `<li class="player-item"><span>${p.name}</span><span>${tags.join(' ')}</span></li>`;
+  }).join('');
+
+  const amHost = socket.id === host;
+  document.getElementById('start-area').style.display = amHost ? 'block' : 'none';
+  document.getElementById('wait-area').style.display = amHost ? 'none' : 'block';
+  document.getElementById('lobby-start-btn').disabled = players.length < 1;
+});
+
+function copyCode() {
+  const url = `${location.origin}?join=${myRoom}`;
+  navigator.clipboard.writeText(url).then(() => alert(`Lien copié !\n${url}`));
+}
+
+// ── Start game (host fetches tracks) ─────────────────────────────────────────
+async function startGame() {
+  showScreen('screen-loading');
+  document.getElementById('loading-status').textContent = 'Connexion à Spotify…';
+  try {
+    const params = new URLSearchParams({
+      mode: settings.mode,
+      theme: settings.theme || '',
+      artists: JSON.stringify(settings.artists),
+    });
+    const res = await fetch(`/api/tracks?${params}`);
+    const data = await res.json();
+    if (!data.tracks || data.tracks.length < 4) throw new Error('Pas assez de morceaux trouvés.');
+    document.getElementById('loading-status').textContent = `${data.tracks.length} morceaux chargés !`;
+    socket.emit('start-game', { code: myRoom, tracks: data.tracks });
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+    showScreen('screen-lobby');
+  }
+}
+
+// ── Game ─────────────────────────────────────────────────────────────────────
+socket.on('new-question', ({ qNumber, qTotal, preview, options, players }) => {
+  answered = false;
+  myScore = players.find(p => p.id === socket.id)?.score || myScore;
+
+  currentQuestion = { options };
+  document.getElementById('q-label').textContent = `Q ${qNumber}/${qTotal}`;
+  document.getElementById('my-score').textContent = myScore;
+  updateBestScore(players);
+  document.getElementById('answered-count').textContent = `0/${players.length} répondu`;
+
+  // Reset hints
+  document.getElementById('hint-year').textContent = 'Année : ?';
+  document.getElementById('hint-year').className = 'hint-pill';
+  document.getElementById('hint-album').textContent = 'Album : ?';
+  document.getElementById('hint-album').className = 'hint-pill';
+
+  // Reset cover
+  document.getElementById('cover-wrap').innerHTML = '🎵';
+
+  // Reset feedback
+  const fb = document.getElementById('feedback');
+  fb.style.display = 'none'; fb.className = 'feedback';
+
+  // Answers
+  document.getElementById('answers').innerHTML = options.map(o =>
+    `<button class="ans-btn" onclick="submitAnswer('${o.id}', this)">
+      <div>${o.title}</div>
+      <div class="ans-artist">${o.artist}</div>
+    </button>`
+  ).join('');
+
+  // Audio
+  stopAudio();
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('time-label').textContent = '0:00 / 0:30';
+  document.getElementById('play-btn').textContent = '▶';
+  audio.src = preview;
+  audio.currentTime = 0;
+  audio.play().then(() => {
+    document.getElementById('play-btn').textContent = '⏸';
+    startProgress();
+  }).catch(() => {});
+
+  showScreen('screen-game');
+
+  // Progressive hints
+  setTimeout(() => {}, 8000); // year revealed on answer-result or reveal
+});
+
+socket.on('players-update', ({ players }) => {
+  const answered = players.filter(p => p.answered).length;
+  document.getElementById('answered-count').textContent = `${answered}/${players.length} répondu`;
+  updateBestScore(players);
+});
+
+function updateBestScore(players) {
+  const best = Math.max(...players.map(p => p.score), 0);
+  document.getElementById('best-score').textContent = best;
+}
+
+function submitAnswer(trackId, btn) {
+  if (answered) return;
+  answered = true;
+  document.querySelectorAll('.ans-btn').forEach(b => b.disabled = true);
+  socket.emit('answer', { code: myRoom, trackId });
+
+  const fb = document.getElementById('feedback');
+  fb.textContent = 'Réponse envoyée…';
+  fb.className = 'feedback waiting';
+  fb.style.display = 'block';
+}
+
+socket.on('answer-result', ({ correct, correctId }) => {
+  const fb = document.getElementById('feedback');
+  document.querySelectorAll('.ans-btn').forEach(b => {
+    const id = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    if (id === correctId) b.classList.add('correct');
+  });
+  if (correct) {
+    fb.textContent = '✅ Bonne réponse !';
+    fb.className = 'feedback correct';
+  } else {
+    fb.textContent = '❌ Raté !';
+    fb.className = 'feedback wrong';
+  }
+  fb.style.display = 'block';
+});
+
+// ── Reveal ───────────────────────────────────────────────────────────────────
+socket.on('reveal', ({ correctId, correctTitle, correctArtist, cover, year, album, players, qNumber, qTotal }) => {
+  stopAudio();
+
+  document.getElementById('reveal-title').textContent = correctTitle;
+  document.getElementById('reveal-artist').textContent = correctArtist;
+  document.getElementById('reveal-meta').textContent = [year, album].filter(Boolean).join(' · ');
+
+  const coverEl = document.getElementById('reveal-cover-emoji');
+  if (cover) {
+    coverEl.innerHTML = `<img src="${cover}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;" alt="pochette">`;
+  } else {
+    coverEl.textContent = '🎵';
+  }
+
+  const ranks = ['🥇','🥈','🥉'];
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  document.getElementById('reveal-players').innerHTML = sorted.map((p, i) => {
+    const isMe = p.id === socket.id;
+    const statusClass = !p.answered ? '' : (p.correct ? 'correct' : 'wrong');
+    const statusIcon = !p.answered ? '⏰' : (p.correct ? '✅' : '❌');
+    return `<li class="player-item ${statusClass}">
+      <span style="font-size:20px;min-width:28px">${ranks[i] || ''}</span>
+      <span style="flex:1">${p.name}${isMe ? ' <span class="tag tag-you">Toi</span>' : ''}</span>
+      <span>${statusIcon}</span>
+      <span class="score-big" style="font-size:16px;min-width:40px;text-align:right">${p.score}</span>
+    </li>`;
+  }).join('');
+
+  const amHost = isHost;
+  document.getElementById('reveal-host-area').style.display = amHost ? 'block' : 'none';
+  document.getElementById('reveal-wait-area').style.display = amHost ? 'none' : 'block';
+
+  // Update my score
+  const me = players.find(p => p.id === socket.id);
+  if (me) myScore = me.score;
+
+  showScreen('screen-reveal');
+});
+
+function nextQuestion() {
+  socket.emit('next-question', { code: myRoom });
+}
+
+// ── Results ───────────────────────────────────────────────────────────────────
+socket.on('game-over', ({ players }) => {
+  stopAudio();
+  const ranks = ['🥇','🥈','🥉'];
+  const classes = ['gold','silver','bronze'];
+  document.getElementById('podium').innerHTML = players.map((p, i) => `
+    <div class="podium-item ${classes[i] || ''}">
+      <span class="podium-rank">${ranks[i] || `${i+1}.`}</span>
+      <span class="podium-name">${p.name}${p.id === socket.id ? ' 👈' : ''}</span>
+      <span class="podium-score">${p.score} pts</span>
+    </div>
+  `).join('');
+
+  const me = players.find(p => p.id === socket.id);
+  const myRank = players.indexOf(me) + 1;
+  const comments = ['🏆 Tu es le champion !', '🥈 Très belle performance !', '🥉 Podium !', '👏 Bien joué !', '😅 Prochaine fois !'];
+  document.getElementById('result-emoji').textContent = ranks[myRank-1] || '🎵';
+  document.getElementById('result-title').textContent = comments[Math.min(myRank-1, comments.length-1)];
+
+  showScreen('screen-results');
+});
+
+// ── Audio ────────────────────────────────────────────────────────────────────
+function togglePlay() {
+  if (audio.paused) { audio.play(); document.getElementById('play-btn').textContent = '⏸'; startProgress(); }
+  else { audio.pause(); document.getElementById('play-btn').textContent = '▶'; }
+}
+
+function startProgress() {
+  clearInterval(progressTimer);
+  progressTimer = setInterval(() => {
+    if (!audio.duration) return;
+    const pct = (audio.currentTime / Math.min(audio.duration, 30)) * 100;
+    document.getElementById('progress-fill').style.width = Math.min(pct, 100) + '%';
+    const s = Math.floor(audio.currentTime);
+    document.getElementById('time-label').textContent = `0:${String(s).padStart(2,'0')} / 0:30`;
+    if (audio.currentTime >= 30 || audio.ended) {
+      audio.pause();
+      document.getElementById('play-btn').textContent = '▶';
+      clearInterval(progressTimer);
+    }
+  }, 300);
+}
+
+function seekAudio(e) {
+  const bar = e.currentTarget;
+  audio.currentTime = (e.offsetX / bar.offsetWidth) * Math.min(audio.duration || 30, 30);
+}
+
+function stopAudio() {
+  clearInterval(progressTimer);
+  audio.pause();
+  audio.src = '';
+}
+
+// ── Errors ───────────────────────────────────────────────────────────────────
+socket.on('error', ({ msg }) => { alert('Erreur : ' + msg); });
+
+// ── Auto-join from URL ────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(location.search);
+  const joinCode = params.get('join');
+  if (joinCode) {
+    document.getElementById('join-code').value = joinCode.toUpperCase();
+    showScreen('screen-join');
+  }
+});
+</script>
+</body>
+</html>
