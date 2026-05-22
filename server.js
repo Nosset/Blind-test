@@ -12,6 +12,74 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+// ─── Spotify Auth (Client Credentials — lecture seule) ───────────────────────
+let spotifyToken = null;
+let spotifyTokenExpiry = 0;
+
+async function getSpotifyToken() {
+  if (spotifyToken && Date.now() < spotifyTokenExpiry) return spotifyToken;
+  const creds = Buffer.from(
+    `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+  ).toString('base64');
+  const res = await axios.post(
+    'https://accounts.spotify.com/api/token',
+    'grant_type=client_credentials',
+    { headers: { Authorization: `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' } }
+  );
+  spotifyToken = res.data.access_token;
+  spotifyTokenExpiry = Date.now() + (res.data.expires_in - 60) * 1000;
+  return spotifyToken;
+}
+
+// Extract playlist ID from Spotify URL or raw ID
+function parseSpotifyPlaylistId(input) {
+  const match = input.match(/playlist[/:]([A-Za-z0-9]+)/);
+  return match ? match[1] : input.trim();
+}
+
+// Fetch Spotify playlist tracks then match on Deezer
+async function loadSpotifyPlaylist(playlistId) {
+  const token = await getSpotifyToken();
+  let tracks = [];
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100&fields=items(track(name,artists,album(name)))`;
+
+  while (url && tracks.length < 200) {
+    const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 });
+    const items = (res.data.items || [])
+      .filter(i => i.track && i.track.name)
+      .map(i => ({ title: i.track.name, artist: i.track.artists[0]?.name || '' }));
+    tracks.push(...items);
+    url = res.data.next || null;
+  }
+  return tracks;
+}
+
+// Match a Spotify track on Deezer to get a preview URL
+async function matchOnDeezer(title, artist) {
+  try {
+    const q = `track:"${title}" artist:"${artist}"`;
+    const res = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=3`, { timeout: 6000 });
+    const hit = (res.data.data || []).find(t => t.preview);
+    if (hit) return {
+      id: String(hit.id), title: hit.title, artist: hit.artist.name,
+      album: hit.album?.title || '', year: null,
+      preview: hit.preview, cover: hit.album?.cover_medium || null,
+    };
+    // Fallback: simpler search
+    const q2 = `${title} ${artist}`;
+    const res2 = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q2)}&limit=3`, { timeout: 6000 });
+    const hit2 = (res2.data.data || []).find(t => t.preview);
+    if (hit2) return {
+      id: String(hit2.id), title: hit2.title, artist: hit2.artist.name,
+      album: hit2.album?.title || '', year: null,
+      preview: hit2.preview, cover: hit2.album?.cover_medium || null,
+    };
+  } catch(e) {}
+  return null;
+}
+
+
 // ─── Deezer search (no API key needed) ───────────────────────────────────────
 const THEMES = {
   'rap-fr':     'rap français',
@@ -129,10 +197,25 @@ async function loadTracks(mode, theme, artists) {
     tracks = [...(r1.status==='fulfilled'?r1.value:[]), ...(r2.status==='fulfilled'?r2.value:[])];
 
   } else if (mode === 'playlist') {
-    // Extract playlist ID from Deezer URL or raw ID
-    const match = theme.match(/playlist\/(\d+)/);
-    const playlistId = match ? match[1] : theme.trim();
-    tracks = await deezerPlaylistTracks(playlistId);
+    // Check if it's a Spotify or Deezer URL
+    if (theme.includes('spotify.com') || theme.includes('spotify:')) {
+      const playlistId = parseSpotifyPlaylistId(theme);
+      const result = await loadSpotifyPlaylist(playlistId);
+      // Match on Deezer
+      const BATCH = 5;
+      const toMatch = result.sort(() => Math.random() - 0.5).slice(0, 80);
+      for (let i = 0; i < toMatch.length; i += BATCH) {
+        const batch = toMatch.slice(i, i + BATCH);
+        const results = await Promise.allSettled(batch.map(t => matchOnDeezer(t.title, t.artist)));
+        for (const r of results) { if (r.status === 'fulfilled' && r.value) tracks.push(r.value); }
+        if (i + BATCH < toMatch.length) await new Promise(r => setTimeout(r, 150));
+      }
+    } else {
+      // Deezer playlist
+      const match = theme.match(/playlist\/(\d+)/);
+      const playlistId = match ? match[1] : theme.trim();
+      tracks = await deezerPlaylistTracks(playlistId);
+    }
   }
 
   // Dedupe by id
@@ -172,6 +255,50 @@ app.get('/api/search-artist', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+app.get('/api/spotify-playlist', async (req, res) => {
+  try {
+    const playlistId = parseSpotifyPlaylistId(req.query.url || '');
+    if (!playlistId) return res.status(400).json({ error: 'URL invalide' });
+
+    // 1. Get track list from Spotify
+    const spotifyTracks = await loadSpotifyPlaylist(playlistId);
+    if (!spotifyTracks.length) return res.status(404).json({ error: 'Playlist vide ou introuvable' });
+
+    // 2. Match on Deezer in batches (avoid rate limiting)
+    const matched = [];
+    const shuffled = spotifyTracks.sort(() => Math.random() - 0.5);
+    const toMatch = shuffled.slice(0, 80); // max 80 tracks
+
+    const BATCH = 5;
+    for (let i = 0; i < toMatch.length; i += BATCH) {
+      const batch = toMatch.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(t => matchOnDeezer(t.title, t.artist))
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) matched.push(r.value);
+      }
+      if (i + BATCH < toMatch.length) await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (matched.length < 4) {
+      return res.status(404).json({ error: `Seulement ${matched.length} morceaux trouvés sur Deezer. Essaie une autre playlist.` });
+    }
+
+    // Dedupe
+    const seen = new Set();
+    const unique = matched.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+
+    res.json({ tracks: unique, total: spotifyTracks.length, matched: unique.length });
+  } catch(e) {
+    console.error('Spotify playlist error:', e.message);
+    if (e.response?.status === 404) return res.status(404).json({ error: 'Playlist Spotify introuvable. Vérifie qu'elle est publique.' });
+    if (e.response?.status === 401) return res.status(401).json({ error: 'Erreur authentification Spotify.' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 
 app.get('/api/top-artists', async (req, res) => {
   try {
