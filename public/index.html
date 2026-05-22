@@ -982,25 +982,58 @@ async function searchApArtists(q) {
 
 function renderApGrid(artists) {
   const grid = document.getElementById('ap-grid');
-  grid.innerHTML = artists.map((a, i) => {
-    const isSelected = apSelectedArtists.some(s => s.name === a.name);
-    const imgHtml = a.image
-      ? `<img class="ap-artist-img" src="${a.image}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="ap-artist-placeholder" style="display:none">🎤</div>`
-      : `<div class="ap-artist-placeholder">🎤</div>`;
-    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" data-idx="${i}">
-      ${imgHtml}
-      <div class="ap-artist-name">${a.name}</div>
-      <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
-    </div>`;
-  }).join('');
-
-  // Store artist data on grid element and attach click handlers
+  // Clear existing
+  grid.innerHTML = '';
   grid._artists = artists;
-  grid.querySelectorAll('.ap-artist-card').forEach((card, i) => {
-    card.addEventListener('click', () => {
-      const artist = grid._artists[i];
-      toggleApArtist(artist.name, artist.image || '');
+
+  artists.forEach((a, i) => {
+    const isSelected = apSelectedArtists.some(s => s.name === a.name);
+
+    const card = document.createElement('div');
+    card.className = 'ap-artist-card' + (isSelected ? ' selected' : '');
+
+    // Image
+    if (a.image) {
+      const img = document.createElement('img');
+      img.className = 'ap-artist-img';
+      img.src = a.image;
+      img.alt = '';
+      img.onerror = function() {
+        this.style.display = 'none';
+        ph.style.display = 'flex';
+      };
+      card.appendChild(img);
+      const ph = document.createElement('div');
+      ph.className = 'ap-artist-placeholder';
+      ph.style.display = 'none';
+      ph.textContent = '🎤';
+      card.appendChild(ph);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'ap-artist-placeholder';
+      ph.textContent = '🎤';
+      card.appendChild(ph);
+    }
+
+    // Name
+    const name = document.createElement('div');
+    name.className = 'ap-artist-name';
+    name.textContent = a.name;
+    card.appendChild(name);
+
+    // Check icon
+    const check = document.createElement('div');
+    check.className = 'ap-check';
+    check.innerHTML = '<svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+    card.appendChild(check);
+
+    // Click handler
+    card.addEventListener('click', function() {
+      toggleApArtist(a.name, a.image || '');
+      this.classList.toggle('selected', apSelectedArtists.some(s => s.name === a.name));
     });
+
+    grid.appendChild(card);
   });
 }
 
@@ -1028,26 +1061,45 @@ function toggleApArtist(name, image) {
 function renderApChips() {
   const wrap = document.getElementById('ap-selected');
   const chips = document.getElementById('ap-chips');
-  const empty = document.getElementById('ap-empty');
   wrap.style.display = apSelectedArtists.length ? 'block' : 'none';
-  if (!apSelectedArtists.length && !document.getElementById('ap-results-section').style.display !== 'none') {
-    empty.style.display = 'flex';
-  }
-  chips.innerHTML = apSelectedArtists.map((a, i) => {
-    const imgHtml = a.image
-      ? `<img class="ap-artist-img" src="${a.image}" alt="" style="width:60px;height:60px;margin-bottom:6px;" onerror="this.style.display='none'">`
-      : `<div class="ap-artist-placeholder" style="width:60px;height:60px;font-size:20px;margin:0 auto 6px;">🎤</div>`;
-    return `<div class="ap-selected-card" data-remove="${i}">
-      <button class="ap-remove" data-remove="${i}">×</button>
-      ${imgHtml}
-      <div class="ap-artist-name" style="font-size:12px;">${a.name}</div>
-    </div>`;
-  }).join('');
-  chips.querySelectorAll('[data-remove]').forEach(el => {
-    el.addEventListener('click', e => {
+  chips.innerHTML = '';
+
+  apSelectedArtists.forEach((a, i) => {
+    const card = document.createElement('div');
+    card.className = 'ap-selected-card';
+
+    const btn = document.createElement('button');
+    btn.className = 'ap-remove';
+    btn.textContent = '×';
+    btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      removeApArtist(parseInt(el.dataset.remove));
+      removeApArtist(i);
     });
+    card.appendChild(btn);
+
+    if (a.image) {
+      const img = document.createElement('img');
+      img.className = 'ap-artist-img';
+      img.src = a.image;
+      img.alt = '';
+      img.style.cssText = 'width:60px;height:60px;margin-bottom:6px;';
+      img.onerror = function() { this.style.display = 'none'; };
+      card.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'ap-artist-placeholder';
+      ph.style.cssText = 'width:60px;height:60px;font-size:20px;margin:0 auto 6px;';
+      ph.textContent = '🎤';
+      card.appendChild(ph);
+    }
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'ap-artist-name';
+    nameEl.style.fontSize = '12px';
+    nameEl.textContent = a.name;
+    card.appendChild(nameEl);
+
+    chips.appendChild(card);
   });
 }
 
