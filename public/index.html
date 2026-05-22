@@ -957,7 +957,7 @@ async function loadPopularArtists() {
   try {
     const results = await Promise.all(
       POPULAR_ARTISTS.map(name =>
-        fetch(\`/api/search-artist?q=\${encodeURIComponent(name)}\`)
+        fetch(`/api/search-artist?q=${encodeURIComponent(name)}`)
           .then(r => r.json())
           .then(d => d[0] || null)
           .catch(() => null)
@@ -974,14 +974,14 @@ function renderApGrid(artists) {
   if (!artists.length) { grid.innerHTML = '<div class="ap-loading">Aucun artiste trouvé</div>'; return; }
   grid.innerHTML = artists.map(a => {
     const isSelected = apSelectedArtists.some(s => s.name === a.name);
-    return \`<div class="ap-artist-card \${isSelected ? 'selected' : ''}" onclick="toggleApArtist('\${a.name.replace(/'/g,"\\'")}', '\${(a.image||'').replace(/'/g,"\\'")}', this)">
-      \${a.image
-        ? \`<img class="ap-artist-img" src="\${a.image}" alt="\${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">\`
+    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" onclick="toggleApArtist('${a.name.replace(/'/g,"\\'")}', '${(a.image||'').replace(/'/g,"\\'")}', this)">
+      ${a.image
+        ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : ''}
-      <div class="ap-artist-placeholder" style="\${a.image ? 'display:none' : ''}">🎤</div>
-      <div class="ap-artist-name">\${a.name}</div>
+      <div class="ap-artist-placeholder" style="${a.image ? 'display:none' : ''}">🎤</div>
+      <div class="ap-artist-name">${a.name}</div>
       <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
-    </div>\`;
+    </div>`;
   }).join('');
 }
 
@@ -1003,7 +1003,7 @@ function renderApChips() {
   const chips = document.getElementById('ap-chips');
   wrap.style.display = apSelectedArtists.length ? 'block' : 'none';
   chips.innerHTML = apSelectedArtists.map((a, i) =>
-    \`<div class="artist-chip">\${a.name}<span class="rm" onclick="removeApArtist(\${i})">×</span></div>\`
+    `<div class="artist-chip">${a.name}<span class="rm" onclick="removeApArtist(${i})">×</span></div>`
   ).join('');
 }
 
@@ -1020,11 +1020,11 @@ function removeApArtist(i) {
 
 async function searchApArtists(q) {
   if (!q.trim()) { loadPopularArtists(); document.getElementById('ap-section-label').textContent = 'Artistes populaires'; return; }
-  document.getElementById('ap-section-label').textContent = \`Résultats pour "\${q}"\`;
+  document.getElementById('ap-section-label').textContent = `Résultats pour "${q}"`;
   const grid = document.getElementById('ap-grid');
   grid.innerHTML = '<div class="ap-loading">Recherche<span class="waiting-dots"></span></div>';
   try {
-    const res = await fetch(\`/api/search-artist?q=\${encodeURIComponent(q)}\`);
+    const res = await fetch(`/api/search-artist?q=${encodeURIComponent(q)}`);
     const artists = await res.json();
     renderApGrid(artists);
   } catch(e) {
@@ -1573,12 +1573,12 @@ async function startRematch() {
 
 window.addEventListener('load', () => {
   // Update header pseudo
-  const savedName = localStorage.getItem('blindtest_pseudo');
-  if (savedName) {
+  const hdrName = localStorage.getItem('blindtest_pseudo');
+  if (hdrName) {
     const el = document.getElementById('hdr-pseudo');
     const av = document.getElementById('hdr-avatar');
-    if (el) el.textContent = savedName;
-    if (av) { av.textContent = savedName[0].toUpperCase(); av.style.background = avatarBg(savedName); }
+    if (el) el.textContent = hdrName;
+    if (av) { av.textContent = hdrName[0].toUpperCase(); av.style.background = avatarBg(hdrName); }
   }
 
   // Inject SVG icons into mode cards
