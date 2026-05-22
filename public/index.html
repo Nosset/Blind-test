@@ -1127,12 +1127,27 @@ function addArtist() {
 
 function selectHomeMode(mode) {
   settings.gameMode = mode;
-  document.getElementById('home-gm-online').classList.toggle('active', mode === 'online');
-  document.getElementById('home-gm-apero').classList.toggle('active', mode === 'apero');
+  // Optional visual toggle if elements exist
+  const onlineEl = document.getElementById('home-gm-online');
+  const aperoEl = document.getElementById('home-gm-apero');
+  if (onlineEl) onlineEl.classList.toggle('active', mode === 'online');
+  if (aperoEl) aperoEl.classList.toggle('active', mode === 'apero');
 }
 
 function goCreate() {
-  // gameMode already set by selectHomeMode
+  // gameMode already set by selectHomeMode, mode may be pre-set too
+  // Reset all sub-panels first
+  ['theme-card','artist-card','custom-card','playlist-card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Show the right panel for pre-selected mode
+  const modeCard = document.querySelector(`#mode-grid .mode-card[data-mode="${settings.mode}"]`);
+  document.querySelectorAll('#mode-grid .mode-card').forEach(c => c.classList.remove('active'));
+  if (modeCard) modeCard.classList.add('active');
+  const panelMap = { theme: 'theme-card', artist: 'artist-card', custom: 'custom-card', playlist: 'playlist-card' };
+  const panel = panelMap[settings.mode];
+  if (panel) { const el = document.getElementById(panel); if (el) el.style.display = 'block'; }
   showScreen('screen-create');
 }
 
