@@ -606,6 +606,9 @@ input[type=text] + input[type=text] { margin-top: 8px; }
     <div class="hint-pill" id="hint-album">Album : ?</div>
   </div>
 
+  <div class="timer-label" id="timer-label">10</div>
+  <div class="timer-wrap"><div class="timer-fill" id="timer-fill"></div></div>
+
   <div id="feedback" class="feedback" style="display:none"></div>
   <div class="answers" id="answers"></div>
 </div>
@@ -643,7 +646,55 @@ input[type=text] + input[type=text] { margin-top: 8px; }
   </div>
   <div class="podium" id="podium"></div>
   <div class="flex-1"></div>
-  <button class="btn btn-primary" onclick="showScreen('screen-home'); location.reload();">Nouvelle partie 🎵</button>
+
+  <!-- Rematch settings (host only) -->
+  <div id="rematch-settings" class="rematch-settings">
+    <div class="card" style="margin-bottom:10px;">
+      <span class="label">Changer le mode pour la revanche</span>
+      <div class="mode-grid" id="rematch-mode-grid" style="grid-template-columns: repeat(3,1fr);">
+        <div class="mode-card active" data-mode="random"><div class="ico">🔀</div><div class="lbl">Aléatoire</div></div>
+        <div class="mode-card" data-mode="theme"><div class="ico">🏷️</div><div class="lbl">Thème</div></div>
+        <div class="mode-card" data-mode="artist"><div class="ico">🎤</div><div class="lbl">Artiste</div></div>
+        <div class="mode-card" data-mode="custom"><div class="ico">🔍</div><div class="lbl">Libre</div></div>
+        <div class="mode-card" data-mode="playlist"><div class="ico">🎵</div><div class="lbl">Playlist</div></div>
+      </div>
+    </div>
+    <div class="card" id="rematch-theme-card" style="display:none; margin-bottom:10px;">
+      <span class="label">Thème</span>
+      <div class="pills" id="rematch-theme-pills">
+        <div class="pill" data-theme="rap-fr">🇫🇷 Rap FR</div>
+        <div class="pill" data-theme="hip-hop">🇺🇸 Hip-hop US</div>
+        <div class="pill" data-theme="80s">📼 Années 80</div>
+        <div class="pill" data-theme="90s">💿 Années 90</div>
+        <div class="pill" data-theme="2000s">🌟 Années 2000</div>
+        <div class="pill" data-theme="rock">🎸 Rock</div>
+        <div class="pill" data-theme="electro">⚡ Electro</div>
+        <div class="pill" data-theme="rnb">🎷 R&B</div>
+        <div class="pill" data-theme="pop">🎤 Pop</div>
+      </div>
+    </div>
+    <div class="card" id="rematch-artist-card" style="display:none; margin-bottom:10px;">
+      <span class="label">Artiste</span>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="rematch-artist-input" placeholder="Ex: Nekfeu, Rihanna…" style="flex:1" maxlength="50">
+        <button class="btn btn-primary" style="width:auto; padding:10px 18px; border-radius: var(--radius-xs);" onclick="addRematchArtist()">+</button>
+      </div>
+      <div id="rematch-artist-chips" class="pills mt8"></div>
+    </div>
+    <div class="card" id="rematch-custom-card" style="display:none; margin-bottom:10px;">
+      <span class="label">Recherche libre</span>
+      <input type="text" id="rematch-custom-input" placeholder="Ex: jazz années 60…" maxlength="80">
+    </div>
+    <div class="card" id="rematch-playlist-card" style="display:none; margin-bottom:10px;">
+      <span class="label">Playlist Deezer</span>
+      <input type="text" id="rematch-playlist-input" placeholder="https://www.deezer.com/fr/playlist/…" maxlength="200">
+    </div>
+  </div>
+
+  <div id="results-host-btns" style="display:none;">
+    <button class="btn btn-primary" onclick="startRematch()">🔄 Revanche !</button>
+  </div>
+  <button class="btn btn-secondary mt8" onclick="showScreen('screen-home'); location.reload();">🏠 Nouvel accueil</button>
 </div>
 
 <audio id="audio" crossorigin="anonymous"></audio>
@@ -659,6 +710,8 @@ let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10 };
 let currentQuestion = null;
 let answered = false;
 let progressTimer = null;
+let countdownTimer = null;
+let rematchSettings = { mode: 'random', theme: null, artists: [] };
 const audio = document.getElementById('audio');
 
 // ── Screen nav + home btn ────────────────────────────────────────────────────
@@ -876,15 +929,31 @@ socket.on('new-question', ({ qNumber, qTotal, preview, options, players }) => {
 
   stopAudio();
   document.getElementById('progress-fill').style.width = '0%';
-  document.getElementById('time-label').textContent = '0:00 / 0:30';
+  document.getElementById('time-label').textContent = '0:00 / 0:10';
   document.getElementById('play-btn').textContent = '▶';
   audio.src = preview;
-  audio.currentTime = 0;
-  audio.play().then(() => {
-    document.getElementById('play-btn').textContent = '⏸';
-    startProgress();
-  }).catch(() => {});
 
+  // Start in the middle of the track
+  audio.addEventListener('loadedmetadata', function onMeta() {
+    audio.removeEventListener('loadedmetadata', onMeta);
+    const mid = audio.duration > 20 ? Math.floor(audio.duration / 2) : 0;
+    audio.currentTime = mid;
+    audio.play().then(() => {
+      document.getElementById('play-btn').textContent = '⏸';
+      startProgress();
+    }).catch(() => {});
+  });
+  // Fallback if metadata already loaded
+  if (audio.readyState >= 1) {
+    const mid = audio.duration > 20 ? Math.floor(audio.duration / 2) : 0;
+    audio.currentTime = mid;
+    audio.play().then(() => {
+      document.getElementById('play-btn').textContent = '⏸';
+      startProgress();
+    }).catch(() => {});
+  }
+
+  startCountdown(10);
   showScreen('screen-game');
 });
 
@@ -981,6 +1050,23 @@ socket.on('game-over', ({ players }) => {
   const comments = ['Tu es le champion !', 'Très belle performance !', 'Podium !', 'Bien joué !', 'Prochaine fois !'];
   document.getElementById('result-emoji').textContent = ranks[myRank-1] || '🎵';
   document.getElementById('result-title').textContent = comments[Math.min(myRank-1, comments.length-1)];
+
+  // Show rematch button for host, init rematch settings to current
+  rematchSettings = { mode: settings.mode, theme: settings.theme, artists: [...(settings.artists || [])] };
+  const hostBtns = document.getElementById('results-host-btns');
+  const rematchSettingsEl = document.getElementById('rematch-settings');
+  if (isHost) {
+    hostBtns.style.display = 'block';
+    rematchSettingsEl.classList.add('visible');
+    // Pre-select current mode
+    document.querySelectorAll('#rematch-mode-grid .mode-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.mode === settings.mode);
+    });
+  } else {
+    hostBtns.style.display = 'none';
+    rematchSettingsEl.classList.remove('visible');
+  }
+
   showScreen('screen-results');
 });
 
@@ -992,13 +1078,16 @@ function togglePlay() {
 
 function startProgress() {
   clearInterval(progressTimer);
+  const startTime = audio.currentTime;
+  const maxDuration = 10; // 10 seconds
   progressTimer = setInterval(() => {
     if (!audio.duration) return;
-    const pct = (audio.currentTime / Math.min(audio.duration, 30)) * 100;
-    document.getElementById('progress-fill').style.width = Math.min(pct, 100) + '%';
-    const s = Math.floor(audio.currentTime);
-    document.getElementById('time-label').textContent = `0:${String(s).padStart(2,'0')} / 0:30`;
-    if (audio.currentTime >= 30 || audio.ended) {
+    const elapsed = audio.currentTime - startTime;
+    const pct = Math.min(elapsed / maxDuration * 100, 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    const s = Math.floor(Math.max(elapsed, 0));
+    document.getElementById('time-label').textContent = `${s}s / 10s`;
+    if (elapsed >= maxDuration || audio.ended) {
       audio.pause();
       document.getElementById('play-btn').textContent = '▶';
       clearInterval(progressTimer);
@@ -1013,11 +1102,105 @@ function seekAudio(e) {
 
 function stopAudio() {
   clearInterval(progressTimer);
+  clearInterval(countdownTimer);
   audio.pause();
   audio.src = '';
 }
 
+function startCountdown(seconds) {
+  clearInterval(countdownTimer);
+  let remaining = seconds;
+  const label = document.getElementById('timer-label');
+  const fill = document.getElementById('timer-fill');
+  label.className = 'timer-label';
+  label.textContent = remaining;
+  fill.style.width = '100%';
+
+  countdownTimer = setInterval(() => {
+    remaining--;
+    label.textContent = remaining;
+    fill.style.width = (remaining / seconds * 100) + '%';
+    if (remaining <= 3) label.className = 'timer-label urgent';
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      label.textContent = '⏰';
+      label.className = 'timer-label';
+    }
+  }, 1000);
+}
+
 socket.on('error', ({ msg }) => { alert('Erreur : ' + msg); });
+
+// ── Rematch ───────────────────────────────────────────────────────────────────
+socket.on('rematch-starting', () => {
+  myScore = 0;
+  showScreen('screen-loading');
+  document.getElementById('loading-status').innerHTML = 'Chargement de la revanche<span class="waiting-dots"></span>';
+});
+
+// Rematch mode grid
+document.querySelectorAll('#rematch-mode-grid .mode-card').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#rematch-mode-grid .mode-card').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    rematchSettings.mode = p.dataset.mode;
+    rematchSettings.artists = [];
+    document.getElementById('rematch-theme-card').style.display = rematchSettings.mode === 'theme' ? 'block' : 'none';
+    document.getElementById('rematch-artist-card').style.display = rematchSettings.mode === 'artist' ? 'block' : 'none';
+    document.getElementById('rematch-custom-card').style.display = rematchSettings.mode === 'custom' ? 'block' : 'none';
+    document.getElementById('rematch-playlist-card').style.display = rematchSettings.mode === 'playlist' ? 'block' : 'none';
+    document.getElementById('rematch-artist-chips').innerHTML = '';
+  });
+});
+
+document.querySelectorAll('#rematch-theme-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#rematch-theme-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    rematchSettings.theme = p.dataset.theme;
+  });
+});
+
+document.getElementById('rematch-artist-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addRematchArtist();
+});
+
+function addRematchArtist() {
+  const inp = document.getElementById('rematch-artist-input');
+  const name = inp.value.trim();
+  if (!name || rematchSettings.artists.includes(name)) return;
+  rematchSettings.artists.push(name);
+  inp.value = '';
+  document.getElementById('rematch-artist-chips').innerHTML = rematchSettings.artists.map((a, i) =>
+    `<div class="artist-chip">${a}<span class="rm" onclick="rematchSettings.artists.splice(${i},1);addRematchArtist()">×</span></div>`
+  ).join('');
+}
+
+async function startRematch() {
+  // Build settings from rematch UI
+  const rs = { ...rematchSettings, nbQuestions: settings.nbQuestions };
+  if (rs.mode === 'custom') rs.theme = document.getElementById('rematch-custom-input').value.trim() || rs.theme;
+  if (rs.mode === 'playlist') rs.theme = document.getElementById('rematch-playlist-input').value.trim() || rs.theme;
+
+  showScreen('screen-loading');
+  document.getElementById('loading-status').innerHTML = 'Chargement de la revanche<span class="waiting-dots"></span>';
+  try {
+    const params = new URLSearchParams({
+      mode: rs.mode,
+      theme: rs.theme || '',
+      artists: JSON.stringify(rs.artists),
+    });
+    const res = await fetch(`/api/tracks?${params}`);
+    const data = await res.json();
+    if (!data.tracks || data.tracks.length < 4) throw new Error('Pas assez de morceaux trouvés.');
+    // Update global settings for next rematch
+    settings = { ...settings, ...rs };
+    socket.emit('rematch', { code: myRoom, tracks: data.tracks });
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+    showScreen('screen-results');
+  }
+}
 
 window.addEventListener('load', () => {
   // Restore saved pseudo
