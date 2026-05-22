@@ -138,28 +138,106 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 
 /* ── HOME ───────────────────────────────────────── */
 .home-bg {
-  position: fixed; top: 0; left: 0; right: 0; height: 50vh;
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(200,255,0,0.15) 0%, transparent 70%);
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(200,255,0,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 100% 100%, rgba(79,172,254,0.06) 0%, transparent 60%);
   pointer-events: none;
 }
-.home-hero { padding: 3rem 0 2rem; }
-.home-waveform {
-  display: flex; align-items: center; gap: 3px; height: 28px; margin-bottom: 1.5rem;
+
+.home-full {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  padding: 2rem;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
 }
-.home-waveform span {
-  display: block; width: 3px; border-radius: 2px; background: var(--accent);
-  animation: wave 1.2s ease-in-out infinite;
+
+/* TOP */
+.home-top {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding-top: 1rem; gap: 10px;
 }
-.home-waveform span:nth-child(1) { height: 8px; animation-delay: 0s; }
-.home-waveform span:nth-child(2) { height: 20px; animation-delay: 0.1s; }
-.home-waveform span:nth-child(3) { height: 14px; animation-delay: 0.2s; }
-.home-waveform span:nth-child(4) { height: 24px; animation-delay: 0.3s; }
-.home-waveform span:nth-child(5) { height: 10px; animation-delay: 0.4s; }
-.home-waveform span:nth-child(6) { height: 18px; animation-delay: 0.2s; }
-.home-waveform span:nth-child(7) { height: 6px; animation-delay: 0.1s; }
-@keyframes wave {
-  0%, 100% { transform: scaleY(1); opacity: 0.7; }
-  50% { transform: scaleY(0.4); opacity: 1; }
+.home-logo-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 28px rgba(200,255,0,0.45);
+  margin-bottom: 4px;
+}
+.home-title-text {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 800; line-height: 1.05; letter-spacing: -0.03em;
+}
+.home-title-text span { color: var(--accent); }
+.home-sub { font-size: 15px; color: var(--muted); }
+
+/* MIDDLE: 2 big buttons side by side */
+.home-mid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  align-content: center;
+}
+.home-big-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 2.5rem 1.5rem;
+  border-radius: var(--radius); cursor: pointer; border: 2px solid transparent;
+  transition: all 0.2s; text-align: center; font-family: var(--font-body);
+}
+.home-big-btn:active { transform: scale(0.97); }
+.home-big-create {
+  background: var(--accent); color: #0a0a0f;
+  box-shadow: 0 0 40px rgba(200,255,0,0.3);
+}
+.home-big-create:hover { box-shadow: 0 0 60px rgba(200,255,0,0.45); }
+.home-big-join {
+  background: var(--surface); color: var(--text);
+  border-color: var(--border-bright);
+}
+.home-big-join:hover { border-color: var(--accent); background: var(--accent-dim2); }
+.home-big-ico {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.home-big-join .home-big-ico { background: var(--surface2); }
+.home-big-label {
+  font-family: var(--font-display); font-size: clamp(18px, 3vw, 26px);
+  font-weight: 800; letter-spacing: -0.01em;
+}
+.home-big-sub { font-size: 13px; opacity: 0.7; }
+.home-big-create .home-big-sub { color: rgba(10,10,15,0.7); }
+
+/* BOTTOM: 2 mode buttons side by side */
+.home-bot {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-bottom: 1rem;
+}
+.home-mode-btn {
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px 18px;
+  cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  color: var(--text);
+}
+.home-mode-btn:hover { border-color: var(--border-bright); }
+.home-mode-btn.active { border-color: var(--accent); background: var(--accent-dim2); }
+.home-mode-ico { font-size: 26px; flex-shrink: 0; }
+.home-mode-title { font-size: 14px; font-weight: 600; }
+.home-mode-btn.active .home-mode-title { color: var(--accent); }
+.home-mode-sub { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .home-full { padding: 1.25rem; gap: 1.5rem; }
+  .home-mid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .home-big-btn { padding: 1.5rem 1rem; gap: 8px; }
+  .home-big-ico { width: 40px; height: 40px; }
+  .home-bot { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .home-mode-btn { padding: 12px; gap: 10px; }
+  .home-mode-ico { font-size: 20px; }
 }
 
 /* ── MODE CARDS ─────────────────────────────────── */
@@ -415,84 +493,52 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 <button class="home-btn" id="home-btn" onclick="goHome()" title="Accueil" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
 
 <!-- ── ACCUEIL ──────────────────────────────────────────────────────── -->
-<div id="screen-home" class="screen active" style="padding: 0; max-width: 100%;">
-  <div class="home-layout">
+<div id="screen-home" class="screen active" style="padding:0; max-width:100%;">
+  <div class="home-full">
 
-    <!-- LEFT: Hero content -->
-    <div class="home-left">
-      <div class="home-badge">🎵 Propulsé par Deezer — 100% gratuit</div>
-
-      <div class="home-eyebrow" style="margin-top: 2.5rem;">Le blind test qui</div>
-      <div class="display home-display">Fait<br><span>Kiffer.</span></div>
-
-      <p class="home-desc">
-        Jusqu'à <strong>10 joueurs</strong> sur leurs téléphones.<br>
-        Des extraits de <strong>10 secondes</strong> pour deviner vite.<br>
-        Rap, Rock, Electro, ta playlist Deezer — tu choisis tout.
-      </p>
-
-      <!-- Feature grid -->
-      <div class="home-feat-grid">
-        <div class="feat-card">
-          <div class="feat-icon">⚡</div>
-          <div class="feat-title">Temps réel</div>
-          <div class="feat-sub">Chaque joueur sur son téléphone</div>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">🎯</div>
-          <div class="feat-title">Bonus rapidité</div>
-          <div class="feat-sub">Réponds vite pour plus de points</div>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">🔄</div>
-          <div class="feat-title">Revanche</div>
-          <div class="feat-sub">Relance sans quitter la salle</div>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">🎵</div>
-          <div class="feat-title">Millions de sons</div>
-          <div class="feat-sub">Via la bibliothèque Deezer</div>
-        </div>
+    <!-- TOP: Title -->
+    <div class="home-top">
+      <div class="home-logo-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#0a0a0f"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       </div>
-
-      <!-- How it works -->
-      <div class="how-it-works" style="margin-top: 2rem;">
-        <div class="hiw-step"><div class="hiw-num">1</div><span>Crée une salle</span></div>
-        <div class="hiw-arrow">→</div>
-        <div class="hiw-step"><div class="hiw-num">2</div><span>Partage le code</span></div>
-        <div class="hiw-arrow">→</div>
-        <div class="hiw-step"><div class="hiw-num">3</div><span>Qui devine vite ?</span></div>
-      </div>
+      <div class="home-title-text">Le Blind Test<br><span>des Copains</span></div>
+      <p class="home-sub">Jusqu'à 20 joueurs &middot; Gratuit &middot; Sans inscription</p>
     </div>
 
-    <!-- RIGHT: Vinyl + CTA -->
-    <div class="home-right">
-      <!-- Big vinyl -->
-      <div class="vinyl-wrap-big">
-        <div class="vinyl-big">
-          <div class="vinyl-rings"></div>
-          <div class="vinyl-inner-big"></div>
-          <div class="vinyl-hole"></div>
+    <!-- MIDDLE: Main CTAs -->
+    <div class="home-mid">
+      <button class="home-big-btn home-big-create" onclick="goCreate()">
+        <div class="home-big-ico">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         </div>
-        <div class="vinyl-glow-big"></div>
-        <!-- Floating labels -->
-        <div class="float-label float-1">🎤 Vald</div>
-        <div class="float-label float-2">📼 Années 90</div>
-        <div class="float-label float-3">🎸 Rock</div>
-        <div class="float-label float-4">🇫🇷 Rap FR</div>
-      </div>
+        <div class="home-big-label">Créer une partie</div>
+        <div class="home-big-sub">Choisis le thème, invite tes amis</div>
+      </button>
+      <button class="home-big-btn home-big-join" onclick="showScreen('screen-join')">
+        <div class="home-big-ico">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        </div>
+        <div class="home-big-label">Rejoindre</div>
+        <div class="home-big-sub">Entre le code de la salle</div>
+      </button>
+    </div>
 
-      <!-- CTA card -->
-      <div class="cta-card">
-        <button class="btn btn-primary" onclick="showScreen('screen-create')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          Créer une partie
-        </button>
-        <button class="btn btn-secondary mt8" onclick="showScreen('screen-join')">
-          Rejoindre avec un code
-        </button>
-        <p class="muted text-center" style="margin-top: 12px; font-size: 12px;">Gratuit · Sans inscription · Illimité</p>
-      </div>
+    <!-- BOTTOM: Mode selector -->
+    <div class="home-bot">
+      <button class="home-mode-btn active" id="home-gm-apero" onclick="selectHomeMode('apero')">
+        <span class="home-mode-ico">🍻</span>
+        <div>
+          <div class="home-mode-title">Mode Apéro</div>
+          <div class="home-mode-sub">Son sur une enceinte, tout le monde est ensemble</div>
+        </div>
+      </button>
+      <button class="home-mode-btn" id="home-gm-online" onclick="selectHomeMode('online')">
+        <span class="home-mode-ico">📱</span>
+        <div>
+          <div class="home-mode-title">Chacun chez soi</div>
+          <div class="home-mode-sub">Chacun entend le son sur son propre téléphone</div>
+        </div>
+      </button>
     </div>
 
   </div>
@@ -503,20 +549,6 @@ input[type=text] + input[type=text] { margin-top: 8px; }
   <button class="back-btn" onclick="showScreen('screen-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Retour</button>
   <h2 style="margin-bottom: 4px;">Nouvelle partie</h2>
   <p class="muted" style="margin-bottom: 20px;">Configure et invite tes amis</p>
-
-  <!-- Game mode selector -->
-  <div class="gamemode-grid">
-    <div class="gamemode-card active" id="gm-online" onclick="selectGameMode('online')">
-      <div class="gm-icon">📱</div>
-      <div class="gm-title">En ligne</div>
-      <div class="gm-desc">Chacun entend le son sur son téléphone. Parfait à distance.</div>
-    </div>
-    <div class="gamemode-card" id="gm-apero" onclick="selectGameMode('apero')">
-      <div class="gm-icon">🍻</div>
-      <div class="gm-title">Apéro</div>
-      <div class="gm-desc">Le son sort d'une seule enceinte. Tout le monde est ensemble.</div>
-    </div>
-  </div>
 
   <div class="card">
     <span class="label">Ton pseudo</span>
@@ -819,7 +851,7 @@ let myId = null;
 let myRoom = null;
 let isHost = false;
 let myScore = 0;
-let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10, gameMode: 'online' };
+let settings = { mode: 'random', theme: null, artists: [], nbQuestions: 10, gameMode: 'apero' };
 let isApero = false;
 let currentQuestion = null;
 let answered = false;
@@ -897,10 +929,19 @@ function addArtist() {
   renderArtistChips();
 }
 
+function selectHomeMode(mode) {
+  settings.gameMode = mode;
+  document.getElementById('home-gm-online').classList.toggle('active', mode === 'online');
+  document.getElementById('home-gm-apero').classList.toggle('active', mode === 'apero');
+}
+
+function goCreate() {
+  // gameMode already set by selectHomeMode
+  showScreen('screen-create');
+}
+
 function selectGameMode(mode) {
   settings.gameMode = mode;
-  document.getElementById('gm-online').classList.toggle('active', mode === 'online');
-  document.getElementById('gm-apero').classList.toggle('active', mode === 'apero');
 }
 
 function renderArtistChips() {
