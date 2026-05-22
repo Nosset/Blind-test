@@ -481,6 +481,99 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 }
 .artist-chip .rm { cursor: pointer; opacity: 0.6; font-size: 16px; line-height: 1; }
 .artist-chip .rm:hover { opacity: 1; }
+
+/* ── ARTIST PICKER ──────────────────────────────── */
+.ap-header-right { display: flex; align-items: center; gap: 12px; }
+.ap-header-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; text-align: right; }
+.ap-header-sub { font-size: 12px; color: var(--muted); text-align: right; }
+.ap-header-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, #ff3cac, #784ba0);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ap-body {
+  max-width: 960px; margin: 0 auto; padding: 1.5rem 2rem 2rem;
+  display: flex; flex-direction: column; min-height: calc(100dvh - 65px);
+}
+.ap-search-wrap {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border-bright);
+  border-radius: 100px; padding: 13px 20px; margin-bottom: 1.25rem;
+  transition: border-color 0.2s;
+}
+.ap-search-wrap:focus-within { border-color: var(--accent); }
+.ap-section-title {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;
+}
+.ap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+.ap-loading { grid-column: 1/-1; text-align: center; color: var(--muted); padding: 3rem; }
+.ap-artist-card {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1.25rem 0.75rem 1rem;
+  cursor: pointer; text-align: center; transition: all 0.18s;
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; user-select: none;
+}
+.ap-artist-card:hover { border-color: rgba(255,255,255,0.25); background: var(--surface2); transform: translateY(-2px); }
+.ap-artist-card:active { transform: scale(0.96); }
+.ap-artist-card.selected { border-color: var(--accent); background: var(--accent-dim2); }
+.ap-artist-img {
+  width: 80px; height: 80px; border-radius: 50%;
+  object-fit: cover; margin: 0 auto 10px; display: block;
+  pointer-events: none;
+}
+.ap-artist-placeholder {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, #534AB7, #ff3cac);
+  margin: 0 auto 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 28px; pointer-events: none;
+}
+.ap-artist-name {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  width: 100%; pointer-events: none;
+}
+.ap-check {
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); display: none;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.ap-artist-card.selected .ap-check { display: flex; }
+.ap-check svg { width: 13px; height: 13px; pointer-events: none; }
+.ap-selected-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px;
+}
+.ap-selected-card {
+  background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--radius-sm); padding: 1rem 0.5rem;
+  text-align: center; position: relative; animation: fadeUp 0.2s ease;
+}
+.ap-remove {
+  position: absolute; top: 6px; right: 6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--red); color: white; border: none;
+  font-size: 14px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ap-empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 3rem 1rem; color: var(--muted);
+}
+.ap-cta { margin-top: auto; padding-top: 1.5rem; }
+@media (max-width: 600px) {
+  .ap-body { padding: 1rem 1.25rem; }
+  .ap-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+  .ap-artist-img, .ap-artist-placeholder { width: 60px; height: 60px; }
+}
+
 </style>
 </head>
 <body>
