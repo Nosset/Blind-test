@@ -248,7 +248,7 @@ app.get('/api/tracks', async (req, res) => {
 app.get('/api/search-artist', async (req, res) => {
   try {
     const q = req.query.q || '';
-    const r = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=12`, { timeout: 8000 });
+    const r = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=1`, { timeout: 8000 });
     const artists = (r.data.data || []).map(a => ({
       id: String(a.id),
       name: a.name,
