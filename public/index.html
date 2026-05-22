@@ -140,104 +140,99 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 .home-bg {
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(200,255,0,0.1) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 100% 100%, rgba(79,172,254,0.06) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 60% at 80% 50%, rgba(120,75,160,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(79,172,254,0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 
-.home-full {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  min-height: 100dvh;
-  padding: 2rem;
-  gap: 2rem;
-  max-width: 1100px;
-  margin: 0 auto;
+/* HEADER */
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.6);
+  backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 50;
 }
-
-/* TOP */
-.home-top {
-  display: flex; flex-direction: column; align-items: center;
-  text-align: center; padding-top: 1rem; gap: 10px;
-}
-.home-logo-icon {
-  width: 52px; height: 52px; border-radius: 14px;
+.hdr-logo { display: flex; align-items: center; gap: 10px; }
+.hdr-logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
   background: var(--accent);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 28px rgba(200,255,0,0.45);
-  margin-bottom: 4px;
+  box-shadow: 0 0 16px rgba(200,255,0,0.4);
+  flex-shrink: 0;
 }
-.home-title-text {
-  font-family: var(--font-display);
-  font-size: clamp(36px, 6vw, 72px);
-  font-weight: 800; line-height: 1.05; letter-spacing: -0.03em;
+.hdr-logo-name {
+  font-family: var(--font-display); font-size: 18px; font-weight: 800;
+  letter-spacing: -0.02em; display: flex; flex-direction: column; line-height: 1.1;
 }
-.home-title-text span { color: var(--accent); }
-.home-sub { font-size: 15px; color: var(--muted); }
-
-/* MIDDLE: 2 big buttons side by side */
-.home-mid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-  align-content: center;
+.hdr-logo-name span { color: var(--accent); font-size: 13px; font-weight: 700; }
+.hdr-right { display: flex; align-items: center; gap: 12px; }
+.hdr-pseudo-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border-bright);
+  border-radius: 100px; padding: 6px 14px 6px 6px; cursor: pointer;
 }
-.home-big-btn {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; padding: 2.5rem 1.5rem;
-  border-radius: var(--radius); cursor: pointer; border: 2px solid transparent;
-  transition: all 0.2s; text-align: center; font-family: var(--font-body);
-}
-.home-big-btn:active { transform: scale(0.97); }
-.home-big-create {
-  background: var(--accent); color: #0a0a0f;
-  box-shadow: 0 0 40px rgba(200,255,0,0.3);
-}
-.home-big-create:hover { box-shadow: 0 0 60px rgba(200,255,0,0.45); }
-.home-big-join {
-  background: var(--surface); color: var(--text);
-  border-color: var(--border-bright);
-}
-.home-big-join:hover { border-color: var(--accent); background: var(--accent-dim2); }
-.home-big-ico {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: rgba(0,0,0,0.15);
+.hdr-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
   display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #0a0a0f;
 }
-.home-big-join .home-big-ico { background: var(--surface2); }
-.home-big-label {
-  font-family: var(--font-display); font-size: clamp(18px, 3vw, 26px);
-  font-weight: 800; letter-spacing: -0.01em;
-}
-.home-big-sub { font-size: 13px; opacity: 0.7; }
-.home-big-create .home-big-sub { color: rgba(10,10,15,0.7); }
+.hdr-pseudo { font-size: 13px; font-weight: 500; color: var(--text); }
 
-/* BOTTOM: 2 mode buttons side by side */
-.home-bot {
+/* BODY */
+.hm-body {
+  max-width: 860px; margin: 0 auto;
+  padding: 2.5rem 2rem 3rem;
+}
+.hm-title {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  text-align: center; margin-bottom: 6px;
+}
+.hm-subtitle { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 2rem; }
+
+/* GRID */
+.hm-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  padding-bottom: 1rem;
 }
-.home-mode-btn {
-  display: flex; align-items: center; gap: 14px; text-align: left;
-  background: var(--surface); border: 2px solid var(--border);
-  border-radius: var(--radius-sm); padding: 16px 18px;
-  cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
-  color: var(--text);
+.hm-card {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 18px 16px;
+  cursor: pointer; transition: all 0.2s; text-align: left;
 }
-.home-mode-btn:hover { border-color: var(--border-bright); }
-.home-mode-btn.active { border-color: var(--accent); background: var(--accent-dim2); }
-.home-mode-ico { font-size: 26px; flex-shrink: 0; }
-.home-mode-title { font-size: 14px; font-weight: 600; }
-.home-mode-btn.active .home-mode-title { color: var(--accent); }
-.home-mode-sub { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.hm-card:hover {
+  border-color: rgba(255,255,255,0.2);
+  background: var(--surface2);
+  transform: translateY(-1px);
+}
+.hm-card:active { transform: scale(0.98); }
+.hm-card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.hm-card-body { flex: 1; min-width: 0; }
+.hm-card-title {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
+}
+.hm-card-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.hm-card-arrow { color: var(--muted); flex-shrink: 0; }
+.hm-card:hover .hm-card-arrow { color: var(--text); }
+.hm-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); display: inline-block;
+  box-shadow: 0 0 6px var(--green);
+}
 
 /* Mobile */
 @media (max-width: 600px) {
-  .home-full { padding: 1.25rem; gap: 1.5rem; }
-  .home-mid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .home-big-btn { padding: 1.5rem 1rem; gap: 8px; }
-  .home-big-ico { width: 40px; height: 40px; }
-  .home-bot { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .home-mode-btn { padding: 12px; gap: 10px; }
-  .home-mode-ico { font-size: 20px; }
+  .hdr { padding: 1rem 1.25rem; }
+  .hm-body { padding: 1.5rem 1.25rem; }
+  .hm-grid { grid-template-columns: 1fr; }
+  .hm-card-icon { width: 44px; height: 44px; font-size: 20px; }
 }
 
 /* ── MODE CARDS ─────────────────────────────────── */
@@ -493,54 +488,87 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 <button class="home-btn" id="home-btn" onclick="goHome()" title="Accueil" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
 
 <!-- ── ACCUEIL ──────────────────────────────────────────────────────── -->
-<div id="screen-home" class="screen active" style="padding:0; max-width:100%;">
-  <div class="home-full">
+<div id="screen-home" class="screen active" style="padding:0; max-width:100%; min-height:100dvh;">
 
-    <!-- TOP: Title -->
-    <div class="home-top">
-      <div class="home-logo-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="#0a0a0f"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-logo">
+      <div class="hdr-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0a0a0f"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       </div>
-      <div class="home-title-text">Le Blind Test<br><span>des Copains</span></div>
-      <p class="home-sub">Jusqu'à 20 joueurs &middot; Gratuit &middot; Sans inscription</p>
+      <span class="hdr-logo-name">Le Blind Test<span>des Copains</span></span>
     </div>
-
-    <!-- MIDDLE: Main CTAs -->
-    <div class="home-mid">
-      <button class="home-big-btn home-big-create" onclick="goCreate()">
-        <div class="home-big-ico">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        </div>
-        <div class="home-big-label">Créer une partie</div>
-        <div class="home-big-sub">Choisis le thème, invite tes amis</div>
-      </button>
-      <button class="home-big-btn home-big-join" onclick="showScreen('screen-join')">
-        <div class="home-big-ico">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-        </div>
-        <div class="home-big-label">Rejoindre</div>
-        <div class="home-big-sub">Entre le code de la salle</div>
-      </button>
+    <div class="hdr-right">
+      <div class="hdr-pseudo-wrap" id="hdr-pseudo-wrap">
+        <div class="hdr-avatar" id="hdr-avatar">?</div>
+        <span class="hdr-pseudo" id="hdr-pseudo">Invité</span>
+      </div>
     </div>
+  </div>
 
-    <!-- BOTTOM: Mode selector -->
-    <div class="home-bot">
-      <button class="home-mode-btn active" id="home-gm-apero" onclick="selectHomeMode('apero')">
-        <span class="home-mode-ico">🍻</span>
-        <div>
-          <div class="home-mode-title">Mode Apéro</div>
-          <div class="home-mode-sub">Son sur une enceinte, tout le monde est ensemble</div>
+  <!-- BODY -->
+  <div class="hm-body">
+    <div class="hm-title">Choisissez votre mode de jeu</div>
+    <div class="hm-subtitle">Chaque partie est unique !</div>
+
+    <!-- Grid of mode cards -->
+    <div class="hm-grid">
+
+      <div class="hm-card" onclick="selectHomeMode('apero'); goCreate();">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#f7971e,#ffd200);">🍻</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Mode Apéro</div>
+          <div class="hm-card-desc">Son sur une enceinte, tout le monde joue ensemble</div>
         </div>
-      </button>
-      <button class="home-mode-btn" id="home-gm-online" onclick="selectHomeMode('online')">
-        <span class="home-mode-ico">📱</span>
-        <div>
-          <div class="home-mode-title">Chacun chez soi</div>
-          <div class="home-mode-sub">Chacun entend le son sur son propre téléphone</div>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
+      <div class="hm-card" onclick="selectHomeMode('online'); goCreate();">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#4facfe,#00f2fe);">📱</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Multijoueur en ligne</div>
+          <div class="hm-card-desc">Créez une salle et jouez avec vos amis à distance</div>
         </div>
-      </button>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
+      <div class="hm-card" onclick="selectHomeMode('apero'); settings.mode='theme'; goCreate();">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#a18cd1,#fbc2eb);">🏷️</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Par thème</div>
+          <div class="hm-card-desc">Rap FR, Rock, Années 80, Electro...</div>
+        </div>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
+      <div class="hm-card" onclick="selectHomeMode('apero'); openArtistPicker();">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#ff3cac,#784ba0);">🎤</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Mode Artiste</div>
+          <div class="hm-card-desc">Testez-vous sur un artiste spécifique</div>
+        </div>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
+      <div class="hm-card" onclick="selectHomeMode('apero'); settings.mode='playlist'; goCreate();">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#f7971e,#e85d04);">🎵</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Playlist Deezer</div>
+          <div class="hm-card-desc">Jouez sur une playlist Deezer de votre choix</div>
+        </div>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
+      <div class="hm-card" onclick="showScreen('screen-join');">
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#00b4db,#0083b0);">🔑</div>
+        <div class="hm-card-body">
+          <div class="hm-card-title">Rejoindre <span class="hm-dot"></span></div>
+          <div class="hm-card-desc">Entrez le code d'une salle existante</div>
+        </div>
+        <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+
     </div>
-
   </div>
 </div>
 
@@ -632,6 +660,49 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 
   <div id="create-error" class="error-msg" style="display:none"></div>
   <button class="btn btn-primary mt16" id="create-btn" onclick="createRoom()">Créer la salle →</button>
+</div>
+
+
+<!-- ── ARTISTE PICKER ──────────────────────────────────────────────── -->
+<div id="screen-artist-pick" class="screen">
+  <div class="ap-header">
+    <button class="back-btn" onclick="showScreen('screen-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Retour</button>
+    <div class="ap-header-right">
+      <div>
+        <div class="ap-header-title">Mode Artiste</div>
+        <div class="ap-header-sub">Testez-vous sur un artiste spécifique</div>
+      </div>
+      <div class="ap-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="ap-search-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--muted);flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input type="text" id="ap-search" placeholder="Rechercher n'importe quel artiste..." style="border:none;background:transparent;flex:1;font-size:15px;color:var(--text);outline:none;">
+  </div>
+
+  <!-- Selected artists chips -->
+  <div id="ap-selected" class="ap-selected-wrap" style="display:none">
+    <div class="label">Artistes sélectionnés</div>
+    <div id="ap-chips" class="pills"></div>
+  </div>
+
+  <!-- Popular artists grid -->
+  <div class="ap-section-title" id="ap-section-label">Artistes populaires</div>
+  <div class="ap-grid" id="ap-grid">
+    <div class="ap-loading">Chargement<span class="waiting-dots"></span></div>
+  </div>
+
+  <!-- CTA -->
+  <div style="margin-top:auto; padding-top:1rem;">
+    <button class="btn btn-primary" id="ap-start-btn" onclick="launchArtistGame()" disabled>
+      Lancer avec ces artistes
+    </button>
+    <p class="muted text-center" style="font-size:12px;margin-top:8px;">Sélectionne au moins 1 artiste</p>
+  </div>
 </div>
 
 <!-- ── REJOINDRE ──────────────────────────────────────────────────────── -->
@@ -860,8 +931,133 @@ let countdownTimer = null;
 let rematchSettings = { mode: 'random', theme: null, artists: [] };
 const audio = document.getElementById('audio');
 
+
+// ── Artist Picker ─────────────────────────────────────────────────────────────
+let apSelectedArtists = []; // [{name, image}]
+let apSearchTimeout = null;
+
+const POPULAR_ARTISTS = [
+  'Bad Bunny','Jul','Vald','PLK','Koba LaD','SCH',
+  'Nekfeu','Orelsan','Aya Nakamura','Ninho','Damso','Doja Cat',
+  'Drake','Taylor Swift','Billie Eilish','The Weeknd','Rihanna','Eminem'
+];
+
+async function openArtistPicker() {
+  apSelectedArtists = [];
+  renderApChips();
+  document.getElementById('ap-search').value = '';
+  document.getElementById('ap-section-label').textContent = 'Artistes populaires';
+  showScreen('screen-artist-pick');
+  await loadPopularArtists();
+}
+
+async function loadPopularArtists() {
+  const grid = document.getElementById('ap-grid');
+  grid.innerHTML = '<div class="ap-loading">Chargement<span class="waiting-dots"></span></div>';
+  try {
+    const results = await Promise.all(
+      POPULAR_ARTISTS.map(name =>
+        fetch(\`/api/search-artist?q=\${encodeURIComponent(name)}\`)
+          .then(r => r.json())
+          .then(d => d[0] || null)
+          .catch(() => null)
+      )
+    );
+    renderApGrid(results.filter(Boolean));
+  } catch(e) {
+    grid.innerHTML = '<div class="ap-loading">Erreur de chargement</div>';
+  }
+}
+
+function renderApGrid(artists) {
+  const grid = document.getElementById('ap-grid');
+  if (!artists.length) { grid.innerHTML = '<div class="ap-loading">Aucun artiste trouvé</div>'; return; }
+  grid.innerHTML = artists.map(a => {
+    const isSelected = apSelectedArtists.some(s => s.name === a.name);
+    return \`<div class="ap-artist-card \${isSelected ? 'selected' : ''}" onclick="toggleApArtist('\${a.name.replace(/'/g,"\\'")}', '\${(a.image||'').replace(/'/g,"\\'")}', this)">
+      \${a.image
+        ? \`<img class="ap-artist-img" src="\${a.image}" alt="\${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">\`
+        : ''}
+      <div class="ap-artist-placeholder" style="\${a.image ? 'display:none' : ''}">🎤</div>
+      <div class="ap-artist-name">\${a.name}</div>
+      <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+    </div>\`;
+  }).join('');
+}
+
+function toggleApArtist(name, image, card) {
+  const idx = apSelectedArtists.findIndex(a => a.name === name);
+  if (idx >= 0) {
+    apSelectedArtists.splice(idx, 1);
+    card.classList.remove('selected');
+  } else {
+    apSelectedArtists.push({ name, image });
+    card.classList.add('selected');
+  }
+  renderApChips();
+  document.getElementById('ap-start-btn').disabled = apSelectedArtists.length === 0;
+}
+
+function renderApChips() {
+  const wrap = document.getElementById('ap-selected');
+  const chips = document.getElementById('ap-chips');
+  wrap.style.display = apSelectedArtists.length ? 'block' : 'none';
+  chips.innerHTML = apSelectedArtists.map((a, i) =>
+    \`<div class="artist-chip">\${a.name}<span class="rm" onclick="removeApArtist(\${i})">×</span></div>\`
+  ).join('');
+}
+
+function removeApArtist(i) {
+  apSelectedArtists.splice(i, 1);
+  renderApChips();
+  document.getElementById('ap-start-btn').disabled = apSelectedArtists.length === 0;
+  // unselect in grid
+  document.querySelectorAll('.ap-artist-card').forEach(card => {
+    const name = card.querySelector('.ap-artist-name')?.textContent;
+    if (!apSelectedArtists.some(a => a.name === name)) card.classList.remove('selected');
+  });
+}
+
+async function searchApArtists(q) {
+  if (!q.trim()) { loadPopularArtists(); document.getElementById('ap-section-label').textContent = 'Artistes populaires'; return; }
+  document.getElementById('ap-section-label').textContent = \`Résultats pour "\${q}"\`;
+  const grid = document.getElementById('ap-grid');
+  grid.innerHTML = '<div class="ap-loading">Recherche<span class="waiting-dots"></span></div>';
+  try {
+    const res = await fetch(\`/api/search-artist?q=\${encodeURIComponent(q)}\`);
+    const artists = await res.json();
+    renderApGrid(artists);
+  } catch(e) {
+    grid.innerHTML = '<div class="ap-loading">Erreur</div>';
+  }
+}
+
+document.getElementById('ap-search')?.addEventListener('input', e => {
+  clearTimeout(apSearchTimeout);
+  apSearchTimeout = setTimeout(() => searchApArtists(e.target.value), 400);
+});
+
+function launchArtistGame() {
+  if (!apSelectedArtists.length) return;
+  settings.artists = apSelectedArtists.map(a => a.name);
+  settings.mode = 'artist';
+  // Go to create screen but skip mode config, just ask pseudo + nb questions
+  showScreen('screen-create');
+  // Pre-select artist mode
+  document.querySelectorAll('#mode-grid .mode-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.mode === 'artist');
+  });
+  ['theme-card','custom-card','playlist-card'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('artist-card').style.display = 'block';
+  // Show selected artists in chips
+  const inp = document.getElementById('artist-input');
+  if (inp) inp.value = '';
+  renderArtistChips(); // uses settings.artists
+}
+
+
 // ── Screen nav + home btn ────────────────────────────────────────────────────
-const SCREENS_WITH_HOME = ['screen-create','screen-join','screen-lobby','screen-loading','screen-game','screen-reveal','screen-results'];
+const SCREENS_WITH_HOME = ['screen-create','screen-artist-pick','screen-join','screen-lobby','screen-loading','screen-game','screen-reveal','screen-results'];
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -946,6 +1142,7 @@ function selectGameMode(mode) {
 
 function renderArtistChips() {
   const c = document.getElementById('artist-chips');
+  if (!c) return;
   c.innerHTML = settings.artists.map((a, i) =>
     `<div class="artist-chip">${a}<span class="rm" onclick="removeArtist(${i})">×</span></div>`
   ).join('');
@@ -1375,6 +1572,15 @@ async function startRematch() {
 }
 
 window.addEventListener('load', () => {
+  // Update header pseudo
+  const savedName = localStorage.getItem('blindtest_pseudo');
+  if (savedName) {
+    const el = document.getElementById('hdr-pseudo');
+    const av = document.getElementById('hdr-avatar');
+    if (el) el.textContent = savedName;
+    if (av) { av.textContent = savedName[0].toUpperCase(); av.style.background = avatarBg(savedName); }
+  }
+
   // Inject SVG icons into mode cards
   const iconMap = {
     'ico-random': ICONS.shuffle, 'ico-theme': ICONS.tag,
@@ -1397,6 +1603,11 @@ window.addEventListener('load', () => {
   document.getElementById('host-name').addEventListener('input', e => {
     localStorage.setItem('blindtest_pseudo', e.target.value);
     document.getElementById('join-name').value = e.target.value;
+    const av = document.getElementById('hdr-avatar');
+    const ps = document.getElementById('hdr-pseudo');
+    const n = e.target.value;
+    if (av && n) { av.textContent = n[0].toUpperCase(); av.style.background = avatarBg(n); }
+    if (ps && n) ps.textContent = n;
   });
   document.getElementById('join-name').addEventListener('input', e => {
     localStorage.setItem('blindtest_pseudo', e.target.value);
