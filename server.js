@@ -44,44 +44,54 @@ async function deezerSearch(q, index = 0) {
     }));
 }
 
-async function deezerArtistTracks(artistName) {
-  // Step 1: find artist ID
-  const searchRes = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=1`, { timeout: 8000 });
-  const artist = searchRes.data.data?.[0];
-  if (!artist) return [];
-
-  // Step 2: fetch their top tracks via /artist/{id}/top
-  const topRes = await axios.get(`https://api.deezer.com/artist/${artist.id}/top?limit=50`, { timeout: 8000 });
-  const tracks = (topRes.data.data || []).filter(t => t.preview);
-
-  // Step 3: also fetch from their discography for variety
-  const albumRes = await axios.get(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`, { timeout: 8000 });
-  const albums = albumRes.data.data || [];
-
-  // Pick a few random albums and grab their tracks
-  const extraTracks = [];
-  for (const album of albums.slice(0, 4)) {
-    try {
-      const albumRes2 = await axios.get(`https://api.deezer.com/album/${album.id}/tracks`, { timeout: 5000 });
-      const albTracks = (albumRes2.data.data || []).filter(t => t.preview).map(t => ({
-        ...t,
-        artist: { name: artist.name },
-        album: { title: album.title, cover_medium: album.cover_medium, cover: album.cover }
-      }));
-      extraTracks.push(...albTracks);
-    } catch(e) {}
+async function deezerPlaylistTracks(playlistId) {
+  try {
+    const res = await axios.get(`https://api.deezer.com/playlist/${playlistId}/tracks?limit=100`, { timeout: 10000 });
+    return (res.data.data || []).filter(t => t.preview).map(t => ({
+      id: String(t.id),
+      title: t.title,
+      artist: t.artist.name,
+      album: t.album?.title || '',
+      year: null,
+      preview: t.preview,
+      cover: t.album?.cover_medium || t.album?.cover || null,
+    }));
+  } catch(e) {
+    console.error('Playlist fetch error:', e.message);
+    return [];
   }
+}
 
-  const all = [...tracks, ...extraTracks];
-  return all.filter(t => t.preview).map(t => ({
-    id: String(t.id),
-    title: t.title,
-    artist: artist.name, // force correct artist name
-    album: t.album?.title || '',
-    year: null,
-    preview: t.preview,
-    cover: t.album?.cover_medium || t.album?.cover || null,
-  }));
+async function deezerArtistTracks(artistName) {
+  try {
+    // Simple search with artist filter - most reliable approach
+    const [r1, r2] = await Promise.allSettled([
+      axios.get(`https://api.deezer.com/search?q=artist:"${encodeURIComponent(artistName)}"&limit=50&index=0`, { timeout: 10000 }),
+      axios.get(`https://api.deezer.com/search?q=artist:"${encodeURIComponent(artistName)}"&limit=50&index=50`, { timeout: 10000 }),
+    ]);
+
+    let tracks = [];
+    for (const r of [r1, r2]) {
+      if (r.status === 'fulfilled') {
+        const items = (r.value.data?.data || []).filter(t => t.preview && 
+          t.artist.name.toLowerCase().includes(artistName.toLowerCase().split(' ')[0]));
+        tracks.push(...items);
+      }
+    }
+
+    return tracks.map(t => ({
+      id: String(t.id),
+      title: t.title,
+      artist: t.artist.name,
+      album: t.album?.title || '',
+      year: null,
+      preview: t.preview,
+      cover: t.album?.cover_medium || t.album?.cover || null,
+    }));
+  } catch(e) {
+    console.error('Artist search error:', e.message);
+    return [];
+  }
 }
 
 async function loadTracks(mode, theme, artists) {
@@ -105,11 +115,24 @@ async function loadTracks(mode, theme, artists) {
     tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 
   } else if (mode === 'artist') {
-    // Fetch tracks for each artist specifically
     const results = await Promise.allSettled(
       artists.map(a => deezerArtistTracks(a))
     );
     tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+
+  } else if (mode === 'custom') {
+    // Free text search
+    const [r1, r2] = await Promise.allSettled([
+      deezerSearch(theme, 0),
+      deezerSearch(theme, 50),
+    ]);
+    tracks = [...(r1.status==='fulfilled'?r1.value:[]), ...(r2.status==='fulfilled'?r2.value:[])];
+
+  } else if (mode === 'playlist') {
+    // Extract playlist ID from Deezer URL or raw ID
+    const match = theme.match(/playlist\/(\d+)/);
+    const playlistId = match ? match[1] : theme.trim();
+    tracks = await deezerPlaylistTracks(playlistId);
   }
 
   // Dedupe by id
