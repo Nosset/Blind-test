@@ -42,12 +42,16 @@ function parseSpotifyPlaylistId(input) {
 async function loadSpotifyPlaylist(playlistId) {
   const token = await getSpotifyToken();
   let tracks = [];
-  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100&fields=items(track(name,artists,album(name)))`;
+  // Simpler URL without fields filter to avoid 403 issues
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`;
 
-  while (url && tracks.length < 200) {
-    const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 });
+  while (url && tracks.length < 150) {
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 12000
+    });
     const items = (res.data.items || [])
-      .filter(i => i.track && i.track.name)
+      .filter(i => i.track && i.track.name && !i.track.is_local)
       .map(i => ({ title: i.track.name, artist: i.track.artists[0]?.name || '' }));
     tracks.push(...items);
     url = res.data.next || null;
