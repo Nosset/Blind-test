@@ -982,15 +982,26 @@ async function searchApArtists(q) {
 
 function renderApGrid(artists) {
   const grid = document.getElementById('ap-grid');
-  grid.innerHTML = artists.map(a => {
+  grid.innerHTML = artists.map((a, i) => {
     const isSelected = apSelectedArtists.some(s => s.name === a.name);
-    const img = a.image ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="ap-artist-placeholder" style="display:none">🎤</div>` : `<div class="ap-artist-placeholder">🎤</div>`;
-    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" onclick="toggleApArtist('${a.name.replace(/'/g,"\'")}', '${(a.image||'').replace(/'/g,"\'")}')">
-      ${img}
+    const imgHtml = a.image
+      ? `<img class="ap-artist-img" src="${a.image}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="ap-artist-placeholder" style="display:none">🎤</div>`
+      : `<div class="ap-artist-placeholder">🎤</div>`;
+    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" data-idx="${i}">
+      ${imgHtml}
       <div class="ap-artist-name">${a.name}</div>
       <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
     </div>`;
   }).join('');
+
+  // Store artist data on grid element and attach click handlers
+  grid._artists = artists;
+  grid.querySelectorAll('.ap-artist-card').forEach((card, i) => {
+    card.addEventListener('click', () => {
+      const artist = grid._artists[i];
+      toggleApArtist(artist.name, artist.image || '');
+    });
+  });
 }
 
 function toggleApArtist(name, image) {
@@ -1023,15 +1034,21 @@ function renderApChips() {
     empty.style.display = 'flex';
   }
   chips.innerHTML = apSelectedArtists.map((a, i) => {
-    const img = a.image
-      ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" style="width:60px;height:60px;margin-bottom:6px;" onerror="this.style.display='none'">`
+    const imgHtml = a.image
+      ? `<img class="ap-artist-img" src="${a.image}" alt="" style="width:60px;height:60px;margin-bottom:6px;" onerror="this.style.display='none'">`
       : `<div class="ap-artist-placeholder" style="width:60px;height:60px;font-size:20px;margin:0 auto 6px;">🎤</div>`;
-    return `<div class="ap-selected-card">
-      <button class="ap-remove" onclick="removeApArtist(${i})">×</button>
-      ${img}
+    return `<div class="ap-selected-card" data-remove="${i}">
+      <button class="ap-remove" data-remove="${i}">×</button>
+      ${imgHtml}
       <div class="ap-artist-name" style="font-size:12px;">${a.name}</div>
     </div>`;
   }).join('');
+  chips.querySelectorAll('[data-remove]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      removeApArtist(parseInt(el.dataset.remove));
+    });
+  });
 }
 
 function removeApArtist(i) {
