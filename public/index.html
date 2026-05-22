@@ -665,8 +665,6 @@ input[type=text] + input[type=text] { margin-top: 8px; }
 
 <!-- ── ARTISTE PICKER ──────────────────────────────────────────────── -->
 <div id="screen-artist-pick" class="screen" style="padding:0; max-width:100%;">
-
-  <!-- Header -->
   <div class="hdr">
     <button class="back-btn" onclick="showScreen('screen-home')" style="margin:0;width:auto;padding:8px 16px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Retour
@@ -686,19 +684,26 @@ input[type=text] + input[type=text] { margin-top: 8px; }
     <!-- Search -->
     <div class="ap-search-wrap">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--muted);flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <input type="text" id="ap-search" placeholder="Rechercher n'importe quel artiste..." style="border:none;background:transparent;flex:1;font-size:15px;color:var(--text);outline:none;">
+      <input type="text" id="ap-search" placeholder="Rechercher un artiste..." style="border:none;background:transparent;flex:1;font-size:15px;color:var(--text);outline:none;">
     </div>
 
-    <!-- Selected chips -->
-    <div id="ap-selected" style="display:none; margin-bottom:1rem;">
-      <div class="label">Artistes sélectionnés</div>
-      <div id="ap-chips" class="pills"></div>
+    <!-- Search results -->
+    <div id="ap-results-section" style="display:none;">
+      <div class="ap-section-title" id="ap-section-label">Résultats</div>
+      <div class="ap-grid" id="ap-grid"></div>
     </div>
 
-    <!-- Grid -->
-    <div class="ap-section-title" id="ap-section-label">Artistes populaires</div>
-    <div class="ap-grid" id="ap-grid">
-      <div class="ap-loading">Chargement<span class="waiting-dots"></span></div>
+    <!-- Selected artists -->
+    <div id="ap-selected" style="display:none; margin-top: 1.5rem;">
+      <div class="ap-section-title">Artistes sélectionnés</div>
+      <div class="ap-selected-grid" id="ap-chips"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="ap-empty" class="ap-empty-state">
+      <div style="font-size:48px; margin-bottom:12px;">🎤</div>
+      <div style="font-size:16px; font-weight:600; margin-bottom:6px;">Cherche tes artistes</div>
+      <div class="muted" style="font-size:14px;">Tape un nom dans la barre de recherche</div>
     </div>
 
     <!-- CTA -->
@@ -939,131 +944,132 @@ const audio = document.getElementById('audio');
 
 
 // ── Artist Picker ─────────────────────────────────────────────────────────────
-let apSelectedArtists = []; // [{name, image}]
+let apSelectedArtists = [];
 let apSearchTimeout = null;
-
-const POPULAR_ARTISTS = [
-  // Rap FR
-  'Vald','Jul','PLK','SCH','Nekfeu','Orelsan','Ninho','Damso','Koba LaD','Booba',
-  'Hamza','Freeze Corleone','Lomepal','Tiakola','Lacrim',
-  // Pop FR
-  'Aya Nakamura','Stromae','Clara Luciani','Angèle','Zaho de Sagazan',
-  // International
-  'Drake','Taylor Swift','Billie Eilish','The Weeknd','Rihanna','Eminem',
-  'Bad Bunny','Doja Cat','Post Malone','Kendrick Lamar','SZA','Travis Scott',
-  // Rock / Classic
-  'AC/DC','Queen','Daft Punk','David Bowie','Michael Jackson','Beyoncé'
-];
 
 async function openArtistPicker() {
   apSelectedArtists = [];
-  renderApChips();
   document.getElementById('ap-search').value = '';
-  document.getElementById('ap-section-label').textContent = 'Artistes populaires';
+  document.getElementById('ap-grid').innerHTML = '';
+  document.getElementById('ap-results-section').style.display = 'none';
+  document.getElementById('ap-selected').style.display = 'none';
+  document.getElementById('ap-empty').style.display = 'flex';
+  document.getElementById('ap-start-btn').disabled = true;
+  document.getElementById('ap-cta-label').textContent = "Sélectionne au moins 1 artiste";
   showScreen('screen-artist-pick');
-  await loadPopularArtists();
-}
-
-async function loadPopularArtists() {
-  const grid = document.getElementById('ap-grid');
-  grid.innerHTML = '<div class="ap-loading">Chargement<span class="waiting-dots"></span></div>';
-  try {
-    const res = await fetch('/api/top-artists');
-    const artists = await res.json();
-    renderApGrid(artists);
-  } catch(e) {
-    grid.innerHTML = '<div class="ap-loading">Erreur de chargement</div>';
-  }
-}
-
-function renderApGrid(artists) {
-  const grid = document.getElementById('ap-grid');
-  if (!artists.length) { grid.innerHTML = '<div class="ap-loading">Aucun artiste trouvé</div>'; return; }
-  grid.innerHTML = artists.map(a => {
-    const isSelected = apSelectedArtists.some(s => s.name === a.name);
-    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" onclick="toggleApArtist('${a.name.replace(/'/g,"\\'")}', '${(a.image||'').replace(/'/g,"\\'")}', this)">
-      ${a.image
-        ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        : ''}
-      <div class="ap-artist-placeholder" style="${a.image ? 'display:none' : ''}">🎤</div>
-      <div class="ap-artist-name">${a.name}</div>
-      <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
-    </div>`;
-  }).join('');
-}
-
-function toggleApArtist(name, image, card) {
-  const idx = apSelectedArtists.findIndex(a => a.name === name);
-  if (idx >= 0) {
-    apSelectedArtists.splice(idx, 1);
-    card.classList.remove('selected');
-  } else {
-    apSelectedArtists.push({ name, image });
-    card.classList.add('selected');
-  }
-  renderApChips();
-  const n = apSelectedArtists.length;
-  document.getElementById('ap-start-btn').disabled = n === 0;
-  const lbl = document.getElementById('ap-cta-label');
-  if (lbl) lbl.textContent = n === 0 ? 'Sélectionne au moins 1 artiste' : `${n} artiste${n>1?'s':''} sélectionné${n>1?'s':''}`;
-}
-
-function renderApChips() {
-  const wrap = document.getElementById('ap-selected');
-  const chips = document.getElementById('ap-chips');
-  wrap.style.display = apSelectedArtists.length ? 'block' : 'none';
-  chips.innerHTML = apSelectedArtists.map((a, i) =>
-    `<div class="artist-chip">${a.name}<span class="rm" onclick="removeApArtist(${i})">×</span></div>`
-  ).join('');
-}
-
-function removeApArtist(i) {
-  apSelectedArtists.splice(i, 1);
-  renderApChips();
-  document.getElementById('ap-start-btn').disabled = apSelectedArtists.length === 0;
-  // unselect in grid
-  document.querySelectorAll('.ap-artist-card').forEach(card => {
-    const name = card.querySelector('.ap-artist-name')?.textContent;
-    if (!apSelectedArtists.some(a => a.name === name)) card.classList.remove('selected');
-  });
 }
 
 async function searchApArtists(q) {
-  if (!q.trim()) { loadPopularArtists(); document.getElementById('ap-section-label').textContent = 'Artistes populaires'; return; }
+  if (!q.trim()) {
+    document.getElementById('ap-results-section').style.display = 'none';
+    document.getElementById('ap-empty').style.display = apSelectedArtists.length ? 'none' : 'flex';
+    return;
+  }
+  document.getElementById('ap-empty').style.display = 'none';
+  document.getElementById('ap-results-section').style.display = 'block';
   document.getElementById('ap-section-label').textContent = `Résultats pour "${q}"`;
   const grid = document.getElementById('ap-grid');
   grid.innerHTML = '<div class="ap-loading">Recherche<span class="waiting-dots"></span></div>';
   try {
     const res = await fetch(`/api/search-artist?q=${encodeURIComponent(q)}`);
     const artists = await res.json();
+    if (!artists.length) { grid.innerHTML = '<div class="ap-loading">Aucun résultat</div>'; return; }
     renderApGrid(artists);
   } catch(e) {
-    grid.innerHTML = '<div class="ap-loading">Erreur</div>';
+    grid.innerHTML = '<div class="ap-loading">Erreur de recherche</div>';
   }
+}
+
+function renderApGrid(artists) {
+  const grid = document.getElementById('ap-grid');
+  grid.innerHTML = artists.map(a => {
+    const isSelected = apSelectedArtists.some(s => s.name === a.name);
+    const img = a.image ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="ap-artist-placeholder" style="display:none">🎤</div>` : `<div class="ap-artist-placeholder">🎤</div>`;
+    return `<div class="ap-artist-card ${isSelected ? 'selected' : ''}" onclick="toggleApArtist('${a.name.replace(/'/g,"\'")}', '${(a.image||'').replace(/'/g,"\'")}')">
+      ${img}
+      <div class="ap-artist-name">${a.name}</div>
+      <div class="ap-check"><svg viewBox="0 0 24 24" fill="#0a0a0f"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleApArtist(name, image) {
+  const idx = apSelectedArtists.findIndex(a => a.name === name);
+  if (idx >= 0) {
+    apSelectedArtists.splice(idx, 1);
+  } else {
+    apSelectedArtists.push({ name, image });
+  }
+  renderApChips();
+  // Re-render grid to update selected state
+  const cards = document.querySelectorAll('.ap-artist-card');
+  cards.forEach(card => {
+    const cardName = card.querySelector('.ap-artist-name')?.textContent;
+    card.classList.toggle('selected', apSelectedArtists.some(a => a.name === cardName));
+  });
+  const n = apSelectedArtists.length;
+  document.getElementById('ap-start-btn').disabled = n === 0;
+  document.getElementById('ap-cta-label').textContent = n === 0
+    ? "Sélectionne au moins 1 artiste"
+    : `${n} artiste${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''}`;
+}
+
+function renderApChips() {
+  const wrap = document.getElementById('ap-selected');
+  const chips = document.getElementById('ap-chips');
+  const empty = document.getElementById('ap-empty');
+  wrap.style.display = apSelectedArtists.length ? 'block' : 'none';
+  if (!apSelectedArtists.length && !document.getElementById('ap-results-section').style.display !== 'none') {
+    empty.style.display = 'flex';
+  }
+  chips.innerHTML = apSelectedArtists.map((a, i) => {
+    const img = a.image
+      ? `<img class="ap-artist-img" src="${a.image}" alt="${a.name}" style="width:60px;height:60px;margin-bottom:6px;" onerror="this.style.display='none'">`
+      : `<div class="ap-artist-placeholder" style="width:60px;height:60px;font-size:20px;margin:0 auto 6px;">🎤</div>`;
+    return `<div class="ap-selected-card">
+      <button class="ap-remove" onclick="removeApArtist(${i})">×</button>
+      ${img}
+      <div class="ap-artist-name" style="font-size:12px;">${a.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function removeApArtist(i) {
+  apSelectedArtists.splice(i, 1);
+  renderApChips();
+  const n = apSelectedArtists.length;
+  document.getElementById('ap-start-btn').disabled = n === 0;
+  document.getElementById('ap-cta-label').textContent = n === 0
+    ? "Sélectionne au moins 1 artiste"
+    : `${n} artiste${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''}`;
+  // Re-render grid
+  const cards = document.querySelectorAll('.ap-artist-card');
+  cards.forEach(card => {
+    const cardName = card.querySelector('.ap-artist-name')?.textContent;
+    card.classList.toggle('selected', apSelectedArtists.some(a => a.name === cardName));
+  });
+}
+
+function launchArtistGame() {
+  if (!apSelectedArtists.length) return;
+  settings.artists = apSelectedArtists.map(a => a.name);
+  settings.mode = 'artist';
+  document.querySelectorAll('#mode-grid .mode-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.mode === 'artist');
+  });
+  ['theme-card','custom-card','playlist-card'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  const artistCard = document.getElementById('artist-card');
+  if (artistCard) artistCard.style.display = 'block';
+  renderArtistChips();
+  showScreen('screen-create');
 }
 
 document.getElementById('ap-search')?.addEventListener('input', e => {
   clearTimeout(apSearchTimeout);
   apSearchTimeout = setTimeout(() => searchApArtists(e.target.value), 400);
 });
-
-function launchArtistGame() {
-  if (!apSelectedArtists.length) return;
-  settings.artists = apSelectedArtists.map(a => a.name);
-  settings.mode = 'artist';
-  // Go to create screen but skip mode config, just ask pseudo + nb questions
-  showScreen('screen-create');
-  // Pre-select artist mode
-  document.querySelectorAll('#mode-grid .mode-card').forEach(c => {
-    c.classList.toggle('active', c.dataset.mode === 'artist');
-  });
-  ['theme-card','custom-card','playlist-card'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('artist-card').style.display = 'block';
-  // Show selected artists in chips
-  const inp = document.getElementById('artist-input');
-  if (inp) inp.value = '';
-  renderArtistChips(); // uses settings.artists
-}
 
 
 // ── Screen nav + home btn ────────────────────────────────────────────────────
