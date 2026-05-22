@@ -268,6 +268,19 @@ io.on('connection', (socket) => {
     else { await sendNextQuestion(code); }
   });
 
+  // Rematch - host restarts with optional new settings
+  socket.on('rematch', async ({ code, tracks }) => {
+    const room = rooms.get(code);
+    if (!room || room.host !== socket.id) return;
+    room.tracks = tracks;
+    room.phase = 'question';
+    room.currentQ = 0;
+    room.usedIds = new Set();
+    room.players.forEach(p => { p.score = 0; p.answered = false; p.correct = false; });
+    io.to(code).emit('rematch-starting', {});
+    await sendNextQuestion(code);
+  });
+
   socket.on('disconnect', () => {
     rooms.forEach((room, code) => {
       room.players = room.players.filter(p => p.id !== socket.id);
@@ -297,7 +310,7 @@ async function sendNextQuestion(code) {
     players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, answered: false })),
   });
 
-  room.answerTimeout = setTimeout(() => revealQuestion(code), 25000);
+  room.answerTimeout = setTimeout(() => revealQuestion(code), 12000);
 }
 
 function revealQuestion(code) {
