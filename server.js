@@ -173,6 +173,42 @@ app.get('/api/search-artist', async (req, res) => {
   }
 });
 
+app.get('/api/top-artists', async (req, res) => {
+  try {
+    // Deezer chart - top tracks, extract unique artists
+    const [chart, rapFr] = await Promise.allSettled([
+      axios.get('https://api.deezer.com/chart/0/artists?limit=50', { timeout: 10000 }),
+      axios.get('https://api.deezer.com/search/artist?q=rap+francais&limit=20', { timeout: 10000 }),
+    ]);
+
+    let artists = [];
+
+    if (chart.status === 'fulfilled') {
+      const chartArtists = (chart.value.data?.data || []).map(a => ({
+        id: String(a.id), name: a.name,
+        image: a.picture_medium || a.picture || null,
+      }));
+      artists.push(...chartArtists);
+    }
+
+    if (rapFr.status === 'fulfilled') {
+      const frArtists = (rapFr.value.data?.data || []).map(a => ({
+        id: String(a.id), name: a.name,
+        image: a.picture_medium || a.picture || null,
+      }));
+      artists.push(...frArtists);
+    }
+
+    // Dedupe by id
+    const seen = new Set();
+    artists = artists.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+
+    res.json(artists.slice(0, 60));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Room state ───────────────────────────────────────────────────────────────
 const rooms = new Map();
 
