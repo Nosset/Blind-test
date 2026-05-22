@@ -44,22 +44,73 @@ async function deezerSearch(q, index = 0) {
     }));
 }
 
-async function loadTracks(mode, theme, artists) {
-  let queries = [];
-  if (mode === 'random') {
-    queries = ['hits', 'top songs', 'popular music', 'chart hits'];
-  } else if (mode === 'theme') {
-    const q = THEMES[theme] || theme;
-    queries = [q, q]; // fetch 2 pages
-  } else if (mode === 'artist') {
-    queries = artists.map(a => `artist:"${a}"`);
+async function deezerArtistTracks(artistName) {
+  // Step 1: find artist ID
+  const searchRes = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=1`, { timeout: 8000 });
+  const artist = searchRes.data.data?.[0];
+  if (!artist) return [];
+
+  // Step 2: fetch their top tracks via /artist/{id}/top
+  const topRes = await axios.get(`https://api.deezer.com/artist/${artist.id}/top?limit=50`, { timeout: 8000 });
+  const tracks = (topRes.data.data || []).filter(t => t.preview);
+
+  // Step 3: also fetch from their discography for variety
+  const albumRes = await axios.get(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`, { timeout: 8000 });
+  const albums = albumRes.data.data || [];
+
+  // Pick a few random albums and grab their tracks
+  const extraTracks = [];
+  for (const album of albums.slice(0, 4)) {
+    try {
+      const albumRes2 = await axios.get(`https://api.deezer.com/album/${album.id}/tracks`, { timeout: 5000 });
+      const albTracks = (albumRes2.data.data || []).filter(t => t.preview).map(t => ({
+        ...t,
+        artist: { name: artist.name },
+        album: { title: album.title, cover_medium: album.cover_medium, cover: album.cover }
+      }));
+      extraTracks.push(...albTracks);
+    } catch(e) {}
   }
 
-  const results = await Promise.allSettled(
-    queries.map((q, i) => deezerSearch(q, i > 0 ? 50 : 0))
-  );
+  const all = [...tracks, ...extraTracks];
+  return all.filter(t => t.preview).map(t => ({
+    id: String(t.id),
+    title: t.title,
+    artist: artist.name, // force correct artist name
+    album: t.album?.title || '',
+    year: null,
+    preview: t.preview,
+    cover: t.album?.cover_medium || t.album?.cover || null,
+  }));
+}
 
-  let tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+async function loadTracks(mode, theme, artists) {
+  let tracks = [];
+
+  if (mode === 'random') {
+    const results = await Promise.allSettled([
+      deezerSearch('hits', 0),
+      deezerSearch('top songs', 0),
+      deezerSearch('popular music', 50),
+      deezerSearch('chart hits', 0),
+    ]);
+    tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+
+  } else if (mode === 'theme') {
+    const q = THEMES[theme] || theme;
+    const results = await Promise.allSettled([
+      deezerSearch(q, 0),
+      deezerSearch(q, 50),
+    ]);
+    tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+
+  } else if (mode === 'artist') {
+    // Fetch tracks for each artist specifically
+    const results = await Promise.allSettled(
+      artists.map(a => deezerArtistTracks(a))
+    );
+    tracks = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+  }
 
   // Dedupe by id
   const seen = new Set();
@@ -67,7 +118,7 @@ async function loadTracks(mode, theme, artists) {
 
   // Shuffle
   tracks.sort(() => Math.random() - 0.5);
-  return tracks.slice(0, 100);
+  return tracks.slice(0, 150);
 }
 
 // ─── REST endpoints ───────────────────────────────────────────────────────────
