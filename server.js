@@ -216,6 +216,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(code.toUpperCase());
     if (!room) { socket.emit('error', { msg: 'Salle introuvable.' }); return; }
     if (room.phase !== 'lobby') { socket.emit('error', { msg: 'La partie a déjà commencé.' }); return; }
+    if (room.players.length >= 20) { socket.emit('error', { msg: 'La salle est pleine (20 joueurs max).' }); return; }
     if (room.players.find(p => p.name.toLowerCase() === playerName.toLowerCase())) {
       socket.emit('error', { msg: 'Ce pseudo est déjà pris.' }); return;
     }
