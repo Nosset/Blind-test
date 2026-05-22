@@ -1083,10 +1083,7 @@ function launchArtistGame() {
   showScreen('screen-create');
 }
 
-document.getElementById('ap-search')?.addEventListener('input', e => {
-  clearTimeout(apSearchTimeout);
-  apSearchTimeout = setTimeout(() => searchApArtists(e.target.value), 400);
-});
+// ap-search listener moved to window.load
 
 
 // ── Screen nav + home btn ────────────────────────────────────────────────────
@@ -1284,7 +1281,10 @@ async function startGame() {
   showScreen('screen-loading');
   const status = document.getElementById('loading-status');
   try {
-    status.innerHTML = 'Recherche des morceaux sur Deezer<span class="waiting-dots"></span>';
+    const isSpotify = settings.mode === 'playlist' && settings.theme && settings.theme.includes('spotify');
+    status.innerHTML = isSpotify
+      ? 'Import de la playlist Spotify<span class="waiting-dots"></span>'
+      : 'Recherche des morceaux sur Deezer<span class="waiting-dots"></span>';
     const params = new URLSearchParams({
       mode: settings.mode,
       theme: settings.theme || '',
@@ -1620,6 +1620,15 @@ async function startRematch() {
 }
 
 window.addEventListener('load', () => {
+  // Artist search listener
+  const apSearchEl = document.getElementById('ap-search');
+  if (apSearchEl) {
+    apSearchEl.addEventListener('input', e => {
+      clearTimeout(apSearchTimeout);
+      apSearchTimeout = setTimeout(() => searchApArtists(e.target.value), 400);
+    });
+  }
+
   // Update header pseudo
   const hdrName = localStorage.getItem('blindtest_pseudo');
   if (hdrName) {
