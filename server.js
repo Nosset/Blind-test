@@ -345,7 +345,9 @@ function emitRoomState(code) {
   io.to(code).emit('room-state', {
     code,
     players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score })),
-    host: room.host, settings: room.settings, phase: room.phase,
+    host: room.host,
+    settings: room.settings, // includes gameMode
+    phase: room.phase,
   });
 }
 
