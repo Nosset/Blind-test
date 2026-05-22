@@ -155,8 +155,12 @@ function buildQuestion(tracks, usedIds) {
   const pool = tracks.filter(t => !usedIds.has(t.id));
   if (pool.length < 4) return null;
   const correct = pool[Math.floor(Math.random() * pool.length)];
-  const wrongPool = tracks.filter(t => t.id !== correct.id && t.artist !== correct.artist);
+
+  // Try different artists first, fall back to different titles (single-artist mode)
+  let wrongPool = tracks.filter(t => t.id !== correct.id && t.artist !== correct.artist);
+  if (wrongPool.length < 3) wrongPool = tracks.filter(t => t.id !== correct.id);
   if (wrongPool.length < 3) return null;
+
   const wrongs = shuffle(wrongPool).slice(0, 3);
   return {
     correct,
