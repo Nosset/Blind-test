@@ -293,8 +293,9 @@ app.get('/api/spotify-playlist', async (req, res) => {
     res.json({ tracks: unique, total: spotifyTracks.length, matched: unique.length });
   } catch(e) {
     console.error('Spotify playlist error:', e.message);
-    if (e.response?.status === 404) return res.status(404).json({ error: "Playlist Spotify introuvable. Vérifie qu'elle est publique." });
-    if (e.response?.status === 401) return res.status(401).json({ error: 'Erreur authentification Spotify.' });
+    if (e.response?.status === 404) return res.status(404).json({ error: "Playlist introuvable. Vérifie que le lien est correct et que la playlist est publique." });
+    if (e.response?.status === 403) return res.status(403).json({ error: "Accès refusé par Spotify. La playlist doit être publique (pas privée ni collaborative)." });
+    if (e.response?.status === 401) return res.status(401).json({ error: "Erreur authentification Spotify. Vérifie les credentials Railway." });
     res.status(500).json({ error: e.message });
   }
 });
