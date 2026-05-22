@@ -968,15 +968,9 @@ async function loadPopularArtists() {
   const grid = document.getElementById('ap-grid');
   grid.innerHTML = '<div class="ap-loading">Chargement<span class="waiting-dots"></span></div>';
   try {
-    const results = await Promise.all(
-      POPULAR_ARTISTS.map(name =>
-        fetch(`/api/search-artist?q=${encodeURIComponent(name)}`)
-          .then(r => r.json())
-          .then(d => d[0] || null)
-          .catch(() => null)
-      )
-    );
-    renderApGrid(results.filter(Boolean));
+    const res = await fetch('/api/top-artists');
+    const artists = await res.json();
+    renderApGrid(artists);
   } catch(e) {
     grid.innerHTML = '<div class="ap-loading">Erreur de chargement</div>';
   }
