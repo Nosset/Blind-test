@@ -551,10 +551,10 @@ input[type=text] + input[type=text] { margin-top: 8px; }
       </div>
 
       <div class="hm-card" onclick="selectHomeMode('apero'); settings.mode='playlist'; goCreate();">
-        <div class="hm-card-icon" style="background: linear-gradient(135deg,#f7971e,#e85d04);">🎵</div>
+        <div class="hm-card-icon" style="background: linear-gradient(135deg,#1db954,#0d7a36);">🎵</div>
         <div class="hm-card-body">
-          <div class="hm-card-title">Playlist Deezer</div>
-          <div class="hm-card-desc">Jouez sur une playlist Deezer de votre choix</div>
+          <div class="hm-card-title">Playlist Spotify</div>
+          <div class="hm-card-desc">Collez un lien de playlist Spotify</div>
         </div>
         <svg class="hm-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
       </div>
@@ -645,7 +645,7 @@ input[type=text] + input[type=text] { margin-top: 8px; }
   <div class="card mt8" id="playlist-card" style="display:none">
     <span class="label">🎵 Playlist Deezer</span>
     <input type="text" id="playlist-input" placeholder="https://www.deezer.com/fr/playlist/123456…" maxlength="200">
-    <p class="muted mt8" style="font-size:12px;">Colle l'URL d'une playlist Deezer — on piochera dedans !</p>
+    <p class="muted mt8" style="font-size:12px;">Colle le lien d'une playlist Spotify <strong>publique</strong> — on trouve les sons sur Deezer automatiquement !</p>
   </div>
 
   <div class="card mt8">
@@ -890,8 +890,8 @@ input[type=text] + input[type=text] { margin-top: 8px; }
       <input type="text" id="rematch-custom-input" placeholder="Ex: jazz années 60…" maxlength="80">
     </div>
     <div class="card" id="rematch-playlist-card" style="display:none; margin-bottom:10px;">
-      <span class="label">Playlist Deezer</span>
-      <input type="text" id="rematch-playlist-input" placeholder="https://www.deezer.com/fr/playlist/…" maxlength="200">
+      <span class="label">Playlist Spotify</span>
+      <input type="text" id="rematch-playlist-input" placeholder="https://open.spotify.com/playlist/…" maxlength="300">
     </div>
   </div>
 
