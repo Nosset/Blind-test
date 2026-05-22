@@ -158,6 +158,21 @@ app.get('/api/tracks', async (req, res) => {
   }
 });
 
+app.get('/api/search-artist', async (req, res) => {
+  try {
+    const q = req.query.q || '';
+    const r = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=12`, { timeout: 8000 });
+    const artists = (r.data.data || []).map(a => ({
+      id: String(a.id),
+      name: a.name,
+      image: a.picture_medium || a.picture || null,
+    }));
+    res.json(artists);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Room state ───────────────────────────────────────────────────────────────
 const rooms = new Map();
 
